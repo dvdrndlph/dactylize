@@ -1,0 +1,549 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\GUIFaceInVideo.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\GUIFaceInVideo.ico"
+IDR_GUIFACTYPE          ICON    DISCARDABLE     "res\\GUIFaceInVideoDoc.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_MAINFRAME           BITMAP  MOVEABLE PURE   "res\\Toolbar.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_MAINFRAME TOOLBAR DISCARDABLE  16, 15
+BEGIN
+    BUTTON      ID_FILE_NEW
+    BUTTON      ID_FILE_OPEN
+    BUTTON      ID_FILE_SAVE
+    SEPARATOR
+    BUTTON      ID_EDIT_CUT
+    BUTTON      ID_EDIT_COPY
+    BUTTON      ID_EDIT_PASTE
+    SEPARATOR
+    BUTTON      ID_FILE_PRINT
+    SEPARATOR
+    BUTTON      ID_VIDEOFILE_PLAY
+    BUTTON      ID_VIDEOFILE_STOP
+    BUTTON      ID_VIDEOFILE_REWIND_START
+    BUTTON      ID_VIDEOFILE_REWIND_FRAME
+    BUTTON      ID_VIDEOFILE_FORWARD_FRAME
+    BUTTON      ID_VIDEOFILE_FORWARD_END
+    SEPARATOR
+    BUTTON      ID_APP_ABOUT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU PRELOAD DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
+        MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
+        MENUITEM "Save &As...",                 ID_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Undo\tCtrl+Z",               ID_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "Cu&t\tCtrl+X",                ID_EDIT_CUT
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",              ID_EDIT_PASTE
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
+        MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
+        POPUP "Video Stream"
+        BEGIN
+            MENUITEM "&View Stored images",         ID_VIDEO_CURRENT
+            , CHECKED
+            MENUITEM "&Trace mode",                 ID_VIDEO_LAST, CHECKED
+            MENUITEM "&View Memory Contents",       ID_VIDEO_SECOND_LAST
+            , CHECKED
+            MENUITEM "Extended Memory Contents",    ID_VIDEO_LAST_MOTION
+            , CHECKED
+            MENUITEM "&Recognize on fly",           ID_VIDEO_AVERAGE_MOTION
+            , CHECKED
+        END
+    END
+    POPUP "&Source-Configuration"
+    BEGIN
+        POPUP "Select Camera"
+        BEGIN
+            MENUITEM "Select Device...",            ID_CONFIG_SELECT_CAMERA
+            MENUITEM "Video Properties...",         ID_CONFIG_CAMERA_PROPERTIES
+
+        END
+        MENUITEM "Select &Video File...",       ID_CONFIG_SELECT_VIDEOFILE
+        MENUITEM "Select Image File...",        ID_CONFIG_FILE1
+        MENUITEM "Select Face &List...",        ID_CONFIG_FILE2
+        MENUITEM "Get images from client",      ID_CONFIG_SELECT_CLIENT
+        , CHECKED
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About GUIFaceInVideo...",    ID_APP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS PRELOAD MOVEABLE PURE 
+BEGIN
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL
+    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL
+    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT
+    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT
+    VK_F6,          ID_NEXT_PANE,           VIRTKEY 
+    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 235, 55
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About GUIFaceInVideo"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Face Recognition in Video test program",IDC_STATIC,40,
+                    10,135,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2002-2005 NRC-CNRC",IDC_STATIC,40,22,119,
+                    8
+    DEFPUSHBUTTON   "OK",IDOK,178,7,50,14,WS_GROUP
+    LTEXT           "For more information visit synapse.vit.iit.nrc.ca",
+                    IDC_STATIC,39,34,154,8
+END
+
+IDD_DEVICE_DIALOG DIALOG DISCARDABLE  0, 0, 153, 98
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Imaging Device List"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,26,77,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,79,77,50,14
+    LISTBOX         IDC_DEVICE_LISTBOX,7,18,139,54,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Select a device:",IDC_STATIC,7,7,53,8
+END
+
+IDD_DIALOG DIALOG DISCARDABLE  0, 0, 141, 426
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Slider1",IDC_SLIDER1,"msctls_trackbar32",TBS_NOTICKS | 
+                    TBS_ENABLESELRANGE | WS_TABSTOP,0,118,126,13
+    CONTROL         "Slider2",IDC_SLIDER2,"msctls_trackbar32",TBS_NOTICKS | 
+                    TBS_ENABLESELRANGE | WS_TABSTOP,1,89,120,13
+    CONTROL         "Mode: Memorization / Recognition",IDC_CHECK1,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,0,18,141,8
+    CONTROL         "2: colour-motion filtering",IDC_CHECK2,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,229,113,8
+    CONTROL         "Slider2",IDC_SLIDER3,"msctls_trackbar32",TBS_NOTICKS | 
+                    TBS_ENABLESELRANGE | WS_TABSTOP,11,210,102,16
+    CONTROL         "Slider2",IDC_SLIDER4,"msctls_trackbar32",TBS_AUTOTICKS | 
+                    WS_TABSTOP,54,37,87,12
+    CONTROL         "Clear Memory !",IDC_CHECK3,"Button",BS_AUTOCHECKBOX | 
+                    BS_PUSHLIKE | WS_TABSTOP,33,311,74,15
+    CTEXT           "4: Person ID:",IDC_STATIC,0,39,43,9
+    CTEXT           "2: Use every N-th frame | D (%)",IDC_STATIC,0,77,141,8
+    CTEXT           "3: Decoding scheme | Fade/400",IDC_STATIC,0,196,141,10
+    CTEXT           "1: Range of temporal filter (#frames)",IDC_STATIC,0,103,
+                    141,11
+    CTEXT           "0",IDC_MINU_VALUE,124,117,13,11
+    CTEXT           "0",IDC_MAXU_VALUE,115,89,26,8
+    CTEXT           "0",IDC_MINV_VALUE,114,214,26,8
+    CTEXT           "0",IDC_MAXV_VALUE,42,39,13,12
+    GROUPBOX        "Memorization | Recognition options",IDC_STATIC,0,178,
+                    141,123
+    CONTROL         "c: Local view transform",IDC_CHECK_COLOUR,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,254,91,8
+    CONTROL         "m: Eye alignment",IDC_CHECK_MOTION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,242,75,9
+    CONTROL         "PLAY BACKWARDS",IDC_CHECK_INTENSITY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,49,6,88,10
+    CONTROL         "RESTART ",IDC_CHECK_START,"Button",BS_AUTOCHECKBOX,0,6,
+                    63,10
+    CONTROL         "Non-stop mode",IDC_CHECK_NONSTOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,35,58,64,10
+    CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,2,71,137,1
+    CONTROL         "Slider5",IDC_SLIDER5,"msctls_trackbar32",TBS_AUTOTICKS | 
+                    TBS_TOP | WS_TABSTOP,3,152,134,11
+    LTEXT           "Video control:",IDC_SLIDER6,45,135,44,8
+END
+
+IDD_ARJUNDIALOG DIALOG DISCARDABLE  0, 0, 339, 130
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Slider1",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,247,31,83,14
+    LTEXT           "Background Threshold",IDC_STATIC,178,34,79,8
+    CONTROL         "Skin Colour Comp",IDC_AVERAGE_COLOUR_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,180,51,70,9
+    CONTROL         "Slider2",IDC_SLIDER2,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,246,48,84,14
+    CONTROL         "Crevice Detection",IDC_EDGE_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,179,70,68,9
+    CONTROL         "Slider2",IDC_SLIDER3,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,246,68,84,14
+    CONTROL         "Finger Detection",IDC_FINGERDETECT,"Button",
+                    BS_AUTOCHECKBOX | BS_PUSHLIKE | WS_TABSTOP,98,100,65,16
+    CONTROL         "Record",IDC_RECORD,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,259,103,37,9
+    CONTROL         "Capture Background",IDC_BGCAP,"Button",BS_AUTOCHECKBOX | 
+                    BS_PUSHLIKE,214,5,74,15
+    CONTROL         "Detect Hands",IDC_HANDDETECT,"Button",BS_AUTOCHECKBOX | 
+                    BS_PUSHLIKE,16,101,74,15
+    CONTROL         "Slider4",IDC_SLIDER4,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,201,104,41,13
+    LTEXT           "Octave",IDC_STATIC,178,109,23,8
+    CONTROL         "Slider5",IDC_SLIDER5,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,202,93,71,12
+    LTEXT           "Key",IDC_STATIC,180,95,18,12
+    LISTBOX         IDD_KEYLISTBOX,7,20,166,78,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Display MIDI Events",IDC_MIDICHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,5,101,9
+END
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "GUIFaceInVideo MFC Application\0"
+            VALUE "FileVersion", "1, 0, 0, 1\0"
+            VALUE "InternalName", "GUIFaceInVideo\0"
+            VALUE "LegalCopyright", "Copyright (C) 2002\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "GUIFaceInVideo.EXE\0"
+            VALUE "ProductName", "GUIFaceInVideo Application\0"
+            VALUE "ProductVersion", "1, 0, 0, 1\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+
+    IDD_DEVICE_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 146
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 91
+    END
+
+    IDD_DIALOG, DIALOG
+    BEGIN
+        TOPMARGIN, 1
+        BOTTOMMARGIN, 417
+    END
+
+    IDD_ARJUNDIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 330
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 123
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE PRELOAD DISCARDABLE 
+BEGIN
+    IDR_MAINFRAME           "GUIFaceInVideo\n\nGUIFac\n\n\nGUIFaceInVideo.Document\nGUIFac Document"
+END
+
+STRINGTABLE PRELOAD DISCARDABLE 
+BEGIN
+    AFX_IDS_APP_TITLE       "GUIFaceInVideo"
+    AFX_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_FILE_NEW             "Create a new document\nNew"
+    ID_FILE_OPEN            "Open an existing document\nOpen"
+    ID_FILE_CLOSE           "Close the active document\nClose"
+    ID_FILE_SAVE            "Save the active document\nSave"
+    ID_FILE_SAVE_AS         "Save the active document with a new name\nSave As"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quit the application; prompts to save documents\nExit"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_FILE_MRU_FILE1       "Open this document"
+    ID_FILE_MRU_FILE2       "Open this document"
+    ID_FILE_MRU_FILE3       "Open this document"
+    ID_FILE_MRU_FILE4       "Open this document"
+    ID_FILE_MRU_FILE5       "Open this document"
+    ID_FILE_MRU_FILE6       "Open this document"
+    ID_FILE_MRU_FILE7       "Open this document"
+    ID_FILE_MRU_FILE8       "Open this document"
+    ID_FILE_MRU_FILE9       "Open this document"
+    ID_FILE_MRU_FILE10      "Open this document"
+    ID_FILE_MRU_FILE11      "Open this document"
+    ID_FILE_MRU_FILE12      "Open this document"
+    ID_FILE_MRU_FILE13      "Open this document"
+    ID_FILE_MRU_FILE14      "Open this document"
+    ID_FILE_MRU_FILE15      "Open this document"
+    ID_FILE_MRU_FILE16      "Open this document"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_NEXT_PANE            "Switch to the next window pane\nNext Pane"
+    ID_PREV_PANE            "Switch back to the previous window pane\nPrevious Pane"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_WINDOW_SPLIT         "Split the active window into panes\nSplit"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_EDIT_CLEAR           "Erase the selection\nErase"
+    ID_EDIT_CLEAR_ALL       "Erase everything\nErase All"
+    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_CUT             "Cut the selection and put it on the Clipboard\nCut"
+    ID_EDIT_FIND            "Find the specified text\nFind"
+    ID_EDIT_PASTE           "Insert Clipboard contents\nPaste"
+    ID_EDIT_REPEAT          "Repeat the last action\nRepeat"
+    ID_EDIT_REPLACE         "Replace specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL      "Select the entire document\nSelect All"
+    ID_EDIT_UNDO            "Undo the last action\nUndo"
+    ID_EDIT_REDO            "Redo the previously undone action\nRedo"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_VIEW_TOOLBAR         "Show or hide the toolbar\nToggle ToolBar"
+    ID_VIEW_STATUS_BAR      "Show or hide the status bar\nToggle StatusBar"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    AFX_IDS_SCSIZE          "Change the window size"
+    AFX_IDS_SCMOVE          "Change the window position"
+    AFX_IDS_SCMINIMIZE      "Reduce the window to an icon"
+    AFX_IDS_SCMAXIMIZE      "Enlarge the window to full size"
+    AFX_IDS_SCNEXTWINDOW    "Switch to the next document window"
+    AFX_IDS_SCPREVWINDOW    "Switch to the previous document window"
+    AFX_IDS_SCCLOSE         "Close the active window and prompts to save the documents"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    AFX_IDS_SCRESTORE       "Restore the window to normal size"
+    AFX_IDS_SCTASKLIST      "Activate Task List"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_CONFIG_SELECT_CAMERA "Select camera device\nSelect Camera"
+    ID_VIDEO_CURRENT        "Show current frame\nCurrent Frame"
+    ID_VIDEO_LAST           "Show last frame\nLast Frame"
+    ID_VIDEO_SECOND_LAST    "Show  second last frame\nSecond Last Frame"
+    ID_VIDEO_MOTION_HISTORY "Show motion history\nMotion History"
+    ID_VIDEO_AVERAGE_MOTION "Recognize in each frame\nRecognize in each frame instead of waiting for a blink"
+    ID_CONFIG_SELECT_VIDEOFILE "Select Video File\nSelect Video File"
+    ID_CAPTURE_PLAY         "Play back a sequence of frames\nPlay"
+    ID_CAPTURE_STOP         "Stop capturing a sequence of frames\nStop"
+    ID_CAPTURE_REWIND_START "Rewind to the start of the sequence\nRewind To Start"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_CAPTURE_REWIND_FRAME "Rewind the sequence by a single frame\nRewind Frame"
+    ID_CAPTURE_FORWARD_FRAME 
+                            "Forward the sequence by a single frame\nForward Frame"
+    ID_CAPTURE_FORWARD_END  "Forward to the end of the sequence\nForward To End"
+    ONFIG_SELECT_CAMERA     "Select Video device\nSelect Video Device"
+    ID_VIDEO_PROPERTIES     "Set Video Properties\nSet Video Properties"
+    ID_CONFIG_CAMERA_PROPETIES "Configure Camera Properties\nConfigure Camera"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "res\GUIFaceInVideo.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"         // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

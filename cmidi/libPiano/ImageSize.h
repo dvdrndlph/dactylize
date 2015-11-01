@@ -1,0 +1,5 @@
+#define IMAGE_WIDTH 160
+#define IMAGE_HEIGHT 120
+
+#define DISPLAY_WIDTH 160
+#define DISPLAY_HEIGHT 120
