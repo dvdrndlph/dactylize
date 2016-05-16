@@ -1,7 +1,7 @@
 /*
   dactylize.ino: Arduino sketch for patchbay circuit.
   Based on code borrowed from *Digityal Electronics for Musicians*
-  nby Alexandros Drymonitis.
+  by Alexandros Drymonitis.
 */
 
 #include <SPI.h>

@@ -1,4 +1,4 @@
-#N canvas 208 46 668 638 10;
+#N canvas 208 46 865 647 10;
 #X declare -lib iemmatrix;
 #X msg 99 27 devices;
 #X obj 246 382 &;
@@ -27,7 +27,7 @@
 #X obj 246 359 1;
 #X obj 246 295 t b f;
 #X obj 371 431 mtx 8 8;
-#X obj 398 92 import iemmatrix;
+#X obj 293 22 import iemmatrix;
 #X obj 99 141 serial_write analog 1 digital 2;
 #X obj 332 180 change;
 #X obj 382 175 change;
@@ -45,6 +45,17 @@
 #X obj 371 387 pack 1 1;
 #X msg 123 54 open 1;
 #X obj 99 119 comport 1 115200;
+#X obj 631 143 utime;
+#X msg 591 111 bang;
+#X floatatom 681 145 8 0 0 0 - - -;
+#X obj 592 143 time;
+#X floatatom 509 170 5 0 0 0 - - -;
+#X floatatom 576 171 5 0 0 0 - - -;
+#X text 542 172 hours;
+#X text 738 147 microseconds;
+#X floatatom 663 170 5 0 0 0 - - -;
+#X text 610 171 minutes;
+#X text 698 172 seconds;
 #X connect 0 0 44 0;
 #X connect 1 0 13 0;
 #X connect 2 0 44 0;
@@ -104,3 +115,9 @@
 #X connect 42 0 14 0;
 #X connect 43 0 44 0;
 #X connect 44 0 28 0;
+#X connect 45 1 47 0;
+#X connect 46 0 45 0;
+#X connect 46 0 48 0;
+#X connect 48 0 49 0;
+#X connect 48 1 50 0;
+#X connect 48 2 53 0;
