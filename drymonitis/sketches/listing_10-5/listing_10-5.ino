@@ -27,7 +27,7 @@ void loop() {
       // set the current bit
       bitSet(out_bytes[i], j);
       set_output();
-      delay(200);
+      delay(100);
     }
   }
 
@@ -40,7 +40,7 @@ void loop() {
       // set current bit
       bitSet(out_bytes[i], j);
       set_output();
-      delay(200);
+      delay(100);
     }
   }
 }

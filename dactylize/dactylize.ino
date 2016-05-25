@@ -1,7 +1,7 @@
 /*
   dactylize.ino: Arduino sketch for patchbay circuit.
   Based on code borrowed from *Digityal Electronics for Musicians*
-  by Alexandros Drymonitis.
+  nby Alexandros Drymonitis.
 */
 
 #include <SPI.h>
@@ -88,6 +88,7 @@ void loop() {
     }
 
     if (connection_detected) {
+        // Serial.println("TRANS:");
         transfer_array[index++] = detected_connection & 0x7f;
         transfer_array[index++] = detected_connection >> 7;
         transfer_array[index++] = connected_chip;
@@ -95,5 +96,13 @@ void loop() {
         connection_detected = false;
 
         Serial.write(transfer_array, NUM_OF_DATA);
+        /*
+        Serial.println(transfer_array[1], BIN);
+        Serial.println(transfer_array[2], BIN);
+        Serial.print("Chip: ");
+        Serial.println(transfer_array[3], DEC);
+        Serial.print("Pin: ");
+        Serial.println(transfer_array[4], DEC);
+        */
     }
 }
