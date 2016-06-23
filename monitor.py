@@ -4,8 +4,10 @@
 # Author: David Randolph
 # Purpose: Monitor MIDI and Dactylize Arduino serial output concurrently and
 #          print their microsecond-timestamped messages to two separate files.
-#          These files will be saved in the ./output directory as
-#          <epochtime>_finger <epochtime>_midi.
+#          These files will be saved in the ./output/raw directory as
+#          <epochtime>_finger <epochtime>_midi. A call to dactylizer.pl on
+#          exit generates appropriately named .midi and .abcdf files in
+#          the ./output/cooked directory.
 #          
 import mido
 import serial
@@ -13,23 +15,26 @@ import thread
 import signal
 import sys
 import os
+import subprocess
 from time import time
 from time import sleep
 
-OUTPUT_DIR = './output/'
+RAW_OUTPUT_DIR = './output/raw/'
+COOKED_OUTPUT_DIR = './output/cooked'
+DACTYLIZER_CMD = './dactylizer.pl'
 SERIAL_PORT = '/dev/cu.usbmodem1421'
 BAUD_RATE = 115200
 start_time = time()
 file_time = int(start_time)
 print file_time
-finger_file_name = OUTPUT_DIR + str(file_time) + '_finger'
-midi_file_name = OUTPUT_DIR + str(file_time) + '_midi'
+finger_file_path = RAW_OUTPUT_DIR + str(file_time) + '_finger'
+midi_file_path = RAW_OUTPUT_DIR + str(file_time) + '_midi'
 
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
+if not os.path.exists(RAW_OUTPUT_DIR):
+    os.makedirs(RAW_OUTPUT_DIR)
 
-finger_file = open(finger_file_name, 'w')
-midi_file = open(midi_file_name, 'w')
+finger_file = open(finger_file_path, 'w')
+midi_file = open(midi_file_path, 'w')
 
 def get_usec_timestamp():
     offset_usec = time() - start_time
@@ -39,6 +44,8 @@ def cleanup_and_exit(signal, frame):
     print("Closing monitor session. . . .")
     midi_file.close()
     finger_file.close()
+    # Call dactylizer to generate .midi and .abcdf output.
+    subprocess.call([DACTYLIZER_CMD, midi_file_path, finger_file_path])
     sys.exit(0)
 
 def twiddle_thumbs():
@@ -52,17 +59,19 @@ def monitor_arduino():
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
     while True:
         msg = ser.readline().rstrip() + " When: " + str(get_usec_timestamp())
+        print msg
         msg += "\n"
         finger_file.write(str(msg)) 
-        print msg
 
 def monitor_midi():
     inny = mido.open_input()
     while True:
         msg = inny.receive()
         msg.time = get_usec_timestamp()
-        midi_file.write(str(msg))
+        msg = str(msg)
         print msg
+        msg += "\n" 
+        midi_file.write(str(msg))
 
 signal.signal(signal.SIGINT, cleanup_and_exit)
 # signal.pause()
