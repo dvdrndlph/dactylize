@@ -8,7 +8,7 @@
 const int INPUT_LATCH_PIN = 9;
 const int OUTPUT_LATCH_PIN = 10;
 const int NUM_OF_INPUT_CHIPS = 2;
-const int NUM_OF_OUTPUT_CHIPS = 2;
+const int NUM_OF_OUTPUT_CHIPS = 6;
 
 byte input_bytes[NUM_OF_INPUT_CHIPS] = { 0 };
 byte output_bytes[NUM_OF_OUTPUT_CHIPS] = { 0 };

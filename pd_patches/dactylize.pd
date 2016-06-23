@@ -55,7 +55,7 @@
 #X text 610 171 minutes;
 #X text 698 172 seconds;
 #X obj 99 141 serial_write analog 1 digital 2;
-#X obj 371 431 mtx 16 16;
+#X obj 371 431 mtx 48 16;
 #X connect 0 0 42 0;
 #X connect 1 0 13 0;
 #X connect 2 0 42 0;
