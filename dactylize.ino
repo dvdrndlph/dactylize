@@ -1,14 +1,15 @@
 /*
   dactylize.ino: Arduino sketch for patchbay circuit.
-  Based on code borrowed from *Digityal Electronics for Musicians*
-  nby Alexandros Drymonitis.
+  Based on code borrowed from *Digital Electronics for Musicians*
+  by Alexandros Drymonitis.
 */
 
 #include <SPI.h>
+
 const int INPUT_LATCH_PIN = 9;
 const int OUTPUT_LATCH_PIN = 10;
 const int NUM_OF_INPUT_CHIPS = 2;
-const int NUM_OF_OUTPUT_CHIPS = 6;
+const int NUM_OF_OUTPUT_CHIPS = 10;
 
 byte input_bytes[NUM_OF_INPUT_CHIPS] = { 0 };
 byte output_bytes[NUM_OF_OUTPUT_CHIPS] = { 0 };
@@ -21,9 +22,10 @@ byte transfer_array[NUM_OF_DATA] = { 192 };
 
 const int NUM_OF_OUTPUT_PINS = NUM_OF_OUTPUT_CHIPS * 8;
 byte connection_matrix[NUM_OF_OUTPUT_PINS][NUM_OF_INPUT_CHIPS] = { 0 };
-bool connection_detected = false;
-int connected_chip;
-int connected_pin;
+bool change_detected = false;
+int hand_chip_id;
+int key_pin_id;
+long change_count = 0;
 
 void get_input() {
     digitalWrite(INPUT_LATCH_PIN, LOW);
@@ -35,18 +37,26 @@ void get_input() {
 
 void set_output() {
     digitalWrite(OUTPUT_LATCH_PIN, LOW);
-    for (int i = NUM_OF_OUTPUT_CHIPS - 1; i >= 0; i--)
-    SPI.transfer(output_bytes[i]);
+    for (int i = NUM_OF_OUTPUT_CHIPS - 1; i >= 0; i--) {
+      SPI.transfer(output_bytes[i]);
+    }
     digitalWrite(OUTPUT_LATCH_PIN, HIGH);
 }
 
 byte check_connections(int pin) {
-    byte detected_connection;
+    byte detected_connection = 0;
     for (int i = 0; i < NUM_OF_INPUT_CHIPS; i++) {
         if (input_bytes[i] != connection_matrix[pin][i]) {
+            /*
+            Serial.print("Input (hand): ");
+            Serial.println(i, DEC);
+            Serial.println(input_bytes[i], BIN);
+            Serial.println(connection_matrix[pin][i], BIN);
+            */
+            
             detected_connection = input_bytes[i];
-            connected_chip = i;
-            connection_detected = true;
+            hand_chip_id = i;
+            change_detected = true;
             connection_matrix[pin][i] = input_bytes[i];
             break;
         }
@@ -64,6 +74,23 @@ void setup() {
     Serial.begin(115200);
 }
 
+void print_new_state(byte detected_connection) {
+    byte state = 0;
+    if (detected_connection) {
+        state = 1;
+    }
+        
+    Serial.print(change_count++, DEC);
+    Serial.print(": Hand:");
+    Serial.print(hand_chip_id, DEC);
+    Serial.print(" Finger:");
+    Serial.print(detected_connection, DEC);   
+    Serial.print(" Key:");
+    Serial.print(key_pin_id, DEC);
+    Serial.print(" State:");
+    Serial.println(state, DEC);
+}
+
 void loop() {
     int index = 1;
     byte detected_connection;
@@ -73,36 +100,22 @@ void loop() {
             int pin = j + (i * 8);
             bitSet(output_bytes[i], j);
             set_output();
-            delayMicroseconds(1);
+            delayMicroseconds(1000);
             get_input();
             detected_connection = check_connections(pin);
             bitClear(output_bytes[i], j);
-            if (connection_detected) {
-                connected_pin = pin;
+            if (change_detected) {
+                key_pin_id = pin;
                 break;
             }
         }
-        if (connection_detected) {
+        if (change_detected) {
             break;
         }
     }
 
-    if (connection_detected) {
-        // Serial.println("TRANS:");
-        transfer_array[index++] = detected_connection & 0x7f;
-        transfer_array[index++] = detected_connection >> 7;
-        transfer_array[index++] = connected_chip;
-        transfer_array[index++] = connected_pin;
-        connection_detected = false;
-
-        Serial.write(transfer_array, NUM_OF_DATA);
-        /*
-        Serial.println(transfer_array[1], BIN);
-        Serial.println(transfer_array[2], BIN);
-        Serial.print("Chip: ");
-        Serial.println(transfer_array[3], DEC);
-        Serial.print("Pin: ");
-        Serial.println(transfer_array[4], DEC);
-        */
+    if (change_detected) {
+        print_new_state(detected_connection);
     }
+    change_detected = false;
 }

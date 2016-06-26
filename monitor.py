@@ -22,7 +22,7 @@ from time import sleep
 RAW_OUTPUT_DIR = './output/raw/'
 COOKED_OUTPUT_DIR = './output/cooked'
 DACTYLIZER_CMD = './dactylizer.pl'
-SERIAL_PORT = '/dev/cu.usbmodem1421'
+SERIAL_PORT = '/dev/cu.usbmodem1411'
 BAUD_RATE = 115200
 start_time = time()
 file_time = int(start_time)
@@ -58,7 +58,7 @@ def twiddle_thumbs():
 def monitor_arduino():
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
     while True:
-        msg = ser.readline().rstrip() + " When: " + str(get_usec_timestamp())
+        msg = ser.readline().rstrip() + " When:" + str(get_usec_timestamp())
         print msg
         msg += "\n"
         finger_file.write(str(msg)) 
