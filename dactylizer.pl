@@ -8,6 +8,47 @@ use strict;
 use Data::Dumper;
 use File::Path;
 
+# my $MIDI_OFFSET = 21; # A0
+my $MIDI_OFFSET = 48; # C3
+
+my $THUMB = 1;
+my $INDEX = 2;
+my $MIDDLE = 3;
+my $RING = 4;
+my $LITTLE = 5;
+my $PINKIE = 5;
+
+my %CODE_FINGER = (
+    16 => $THUMB,
+    8 => $INDEX,
+    4 => $MIDDLE,
+    2 => $RING,
+    1 => $LITTLE
+);
+
+my %BIT_FINGER = (
+    7 => $LITTLE,
+    6 => $RING,
+    5 => $MIDDLE,
+    4 => $INDEX,
+    3 => $THUMB
+);
+
+sub get_finger_array {
+    my ($binary) = @_;
+    my @bit = split //, $binary;
+    my @finger = ();
+    my $bit_num = 0;
+    foreach my $bit (@bit) {
+        if ($bit[$bit_num]) {
+            push @finger, $BIT_FINGER{$bit_num};
+        }
+        $bit_num++; 
+    }
+    return @finger;
+}
+
+
 my $Midi_Path = $ARGV[0];
 my $Finger_Path = $ARGV[1];
 print "Dactylizing your performance. . . .\n";
@@ -21,9 +62,14 @@ my @Midi_Event;
 open MIDI, "< $Midi_Path" or die "Bad open of $Midi_Path";
 # note_on channel=0 note=65 velocity=6 time=904.565069914
 while (my $midi_line = <MIDI>) {
-    next if not $midi_line =~ /^note_/;
-    my @token = split /\s+/, $midi_line;
     my %midi_event = ();
+    my @token = split /\s+/, $midi_line;
+    if ($token[0] =~ /^(note_\w+)/) {
+        $midi_event{event} = $1;
+    } else {
+        next;
+    }
+    
     foreach my $token (@token) {
         next if not $token =~ /=/;
         my ($var, $val) = split '=', $token;
@@ -47,6 +93,8 @@ while (my $finger_line = <FINGERS>) {
     my $decimal = $finger_event{Finger};
     my $binary = sprintf('%08b', $decimal);
     $finger_event{Finger} = $binary;
+    my @finger_array = get_finger_array($binary);
+    $finger_event{Finger_Array} = \@finger_array;
     push @Finger_Event, \%finger_event;
 }
 print Dumper \@Finger_Event;
