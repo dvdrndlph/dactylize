@@ -20,7 +20,6 @@ from time import time
 from time import sleep
 
 RAW_OUTPUT_DIR = './output/raw/'
-COOKED_OUTPUT_DIR = './output/cooked'
 DACTYLIZER_CMD = './dactylizer.pl'
 SERIAL_PORT = '/dev/cu.usbmodem1411'
 BAUD_RATE = 115200
@@ -45,7 +44,7 @@ def cleanup_and_exit(signal, frame):
     midi_file.close()
     finger_file.close()
     # Call dactylizer to generate .midi and .abcdf output.
-    subprocess.call([DACTYLIZER_CMD, midi_file_path, finger_file_path])
+    subprocess.call([DACTYLIZER_CMD, str(file_time)])
     sys.exit(0)
 
 def twiddle_thumbs():

@@ -2,14 +2,32 @@
 # File: dactylizer.pl
 # Author: David Rndolph
 # Date: 23 June 2016
-# Purpose: Process raw input to produce a MIDI file and corresponding abcDF file.
+# Purpose: Process raw input to produce a MIDI file and corresponding
+# abcDF file.
 #
 use strict;
+use warnings;
 use Data::Dumper;
 use File::Path;
+use MIDI;
 
+# The first (lowest) note on full keyboard is A0, which is MIDI 21.
 # my $MIDI_OFFSET = 21; # A0
+# The microKEY default setting starts at C3.
 my $MIDI_OFFSET = 48; # C3
+
+my $RAW_DIR = './output/raw/';
+my $MIDI_SUFFIX = '_midi';
+my $FINGER_SUFFIX = '_finger';
+my $COOKED_DIR = './output/cooked/';
+
+my $RIGHT_HAND = 0;
+my $LEFT_HAND = 1;
+
+my %HAND_OUTPUT = (
+    $RIGHT_HAND => '>',
+    $LEFT_HAND => '<'
+);
 
 my $THUMB = 1;
 my $INDEX = 2;
@@ -48,9 +66,9 @@ sub get_finger_array {
     return @finger;
 }
 
-
-my $Midi_Path = $ARGV[0];
-my $Finger_Path = $ARGV[1];
+my $File_Time = $ARGV[0];
+my $Midi_Path = "${RAW_DIR}${File_Time}${MIDI_SUFFIX}";
+my $Finger_Path = "${RAW_DIR}${File_Time}${FINGER_SUFFIX}";
 print "Dactylizing your performance. . . .\n";
 print "MIDI event file: $Midi_Path\n";
 print "Fingering file: $Finger_Path\n";
@@ -77,9 +95,9 @@ while (my $midi_line = <MIDI>) {
     } 
     push @Midi_Event, \%midi_event;
 }
-print Dumper \@Midi_Event;
+# print Dumper \@Midi_Event;
 
-my @Finger_Event;
+my %Finger_Event_For_Note;
 open FINGERS, "< $Finger_Path" or die "Bad open of $Finger_Path";
 # 240: Hand:1 Finger:16 Key:5 State:1 When:904.505608082
 while (my $finger_line = <FINGERS>) {
@@ -95,11 +113,96 @@ while (my $finger_line = <FINGERS>) {
     $finger_event{Finger} = $binary;
     my @finger_array = get_finger_array($binary);
     $finger_event{Finger_Array} = \@finger_array;
-    push @Finger_Event, \%finger_event;
+    my $note_number = $finger_event{Key} + $MIDI_OFFSET;
+    push @{$Finger_Event_For_Note{$note_number}}, \%finger_event;
 }
-print Dumper \@Finger_Event;
+# print Dumper \%Finger_Event_For_Note;
 
-# The first (lowest) note on full keyboard is A0, which is MIDI 21.
+sub get_note_ending_time {
+    my ($onset_event) = @_;
+    my $onset_time = $onset_event->{time};
+    my $onset_note = $onset_event->{note};
+    foreach my $midi_event (@Midi_Event) {
+        next if $midi_event->{time} <= $onset_time;
+        next if $midi_event->{note} ne $onset_note;
+        return $midi_event->{time};
+    }
+    die "Note never ended."
+}
 
+sub get_fingering {
+    my ($midi_event) = @_;
+    my $onset_time = $midi_event->{time};
+    my $note = $midi_event->{note};
+    my $ending_time = get_note_ending_time($midi_event);
+# print "Curious about $note starting at $onset_time, ending at $ending_time.\n";
+# print Dumper $Finger_Event_For_Note{$note};
+    my $striking_event;
+    my $releasing_event;
+   
+    while (my $finger_event = shift @{$Finger_Event_For_Note{$note}}) {
+# print "Checking fingering event at time $finger_event->{When}\n";
+        if ($finger_event->{When} > $ending_time) {
+            unshift @{$Finger_Event_For_Note{$note}}, $finger_event;
+            last;
+        }
+
+        my $finger_count = scalar @{$finger_event->{Finger_Array}};
+        if ($finger_event->{State}) {
+            if ($finger_count == 1) {
+# print "One finger.\n";
+                if (not defined $striking_event) {
+# print "No striking.\n";
+                    $striking_event = $finger_event;
+                }
+                if ($finger_event->{When} <= $midi_event->{time}) {
+                    $striking_event = $finger_event;
+                } else {
+                    $releasing_event = $finger_event;
+                }
+            }
+        } else {
+            # It is a release event. This means no fingers are in
+            # contact with the key anymore.
+            last;
+        }
+    }
+
+    my $striking_hand = "";
+    if (not $striking_event) {
+        return "x";
+    }
+
+    my $striking_hand = $HAND_OUTPUT{$striking_event->{Hand}};
+    my $striking_finger = $striking_event->{Finger_Array}->[0];
+    my $fingering = "${striking_hand}${striking_finger}";
+    if (not $releasing_event) {
+        return $fingering;
+    }
+
+    my $releasing_hand = $HAND_OUTPUT{$releasing_event->{Hand}};
+    my $releasing_finger = $releasing_event->{Finger_Array}->[0];
+    if ($releasing_hand ne $striking_hand) {
+        $fingering .= "-${releasing_hand}${releasing_finger}";
+    } elsif ($releasing_finger ne $striking_finger) {
+        $fingering .= "-${releasing_finger}";
+    }
+ 
+    return $fingering;
+}
+
+# Loop through MIDI notes and assign the ``striking" finger as the last
+# one to contact the note prior to its onset time. The ``releasing" finger
+# is the last finger seen to touch the key prior to its note's ending 
+# time stamp, or, if no such finger contact is detected, the striking 
+# and releasing fingers are assumed to be the same.
+my @Fingering = ();
+foreach my $midi_event (@Midi_Event) {
+    next if not $midi_event->{event} eq 'note_on';
+    my $fingering = get_fingering($midi_event);
+    print $fingering;
+}
+
+print "\n";
 
 print "Done Dactylizing.\n\n";
