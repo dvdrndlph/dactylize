@@ -1,0 +1,47 @@
+#! /usr/bin/env ruby
+
+# Convert SMPTE (negative) division value to SMF ticks/beat
+
+require 'midifile.rb'
+
+MicrosecperBeat = 500000
+
+if ARGV.length != 2
+  puts "command is 'SMPTEtoSMF <smpte-in.mid> <smf-out.mid>'"
+  exit
+end
+out = Midifile.new	# create an empty output file
+open(ARGV[0]) {|f|
+  mr = Midifile.new f	# the original file
+  mr.each {|ev|	# copy everything over verbatim, except the header
+     if ev.code == HDR  then
+      if ev.division < 0 then
+        # timing is SMPTE
+        # -- convert from frames/sec:ticks/frame to ticks/quarter-note
+        frames = -(ev.division >> 8)
+        tpf = ev.division & 0xff
+        tps = frames * tpf
+        divn = (MicrosecperBeat*tps/1000000.0).to_i
+        ev = MidiHeader.new(ev.format, ev.ntrks, divn)
+        divstr = "#{frames} frames/sec, #{tpf} ticks/frame (SMPTE)"
+        puts "File is format #{ev.format} with #{ev.ntrks} tracks"+
+            "--  #{divstr} new division #{ev.division} ticks/beat (@120 bpm)"
+        out.add(ev)	# add converted header to output build
+        ## This was the old way to create a tempo event
+        ## kept for illustration (if you need to generate some odd event)
+         # ev = MidiEvent.new(META, 0, 0, 0)
+         # ev.meta = 0x51    # Tempo
+         # ev.length = 3
+         # ev.data = "\x7\xa1\x20"    # 500000 as three hex bytes (! sorry...)
+        ## Much simpler now...!:
+        ev = genTempo(0)	# generate default 500000 micros/q.note at time 0
+       else
+         puts "No fix needed -- file written unchanged"
+       end
+      end
+         out.add(ev)
+  }
+}
+open(ARGV[1],"w") {|fw|
+  out.to_stream(fw) if out.vet()
+}

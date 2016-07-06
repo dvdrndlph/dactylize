@@ -1,0 +1,88 @@
+#! /usr/bin/env ruby
+
+# This script will duplicate a midifile, but replace sustain pedal action
+# with appropriately lengthened notes.
+
+require 'midifile.rb'
+
+class Channel
+	def initialize(num)
+		@chan = num
+		@pedal = false
+		@active = {}
+	end
+	def key_down(ev, seq)
+		note = ev.data1
+		if @active[note] then
+			## '@chan is 0..15 -- method uses 1..16!!:
+			# leave one tick between off and on for synth's sake!
+			offev = genNoteOff(ev.time-1, note, 0, @chan+1, ev.trkno)
+			seq.add offev
+		end
+		seq.add ev
+		@active[note] = @pedal ? :keyheld : :key
+	end
+	def key_up(ev, seq)
+		note = ev.data1
+		if @pedal then
+			@active[note] = :held
+		else
+			@active[note] =  nil
+			## always replace with true Note Off
+			offev = genNoteOff(ev.time, note, 0, @chan+1, ev.trkno)
+			seq.add offev
+		end
+	end
+	def pedal_down()
+		@pedal = true
+		@active.each {|key, state|
+			@active[key] = :keyheld if state == :key
+		}
+	end
+	def pedal_up(ev, seq)
+		@pedal = false
+		@active.each {|note, state|
+			if state == :held then
+				@active[note] = nil
+				ev = genNoteOff(ev.time, note, 0, @chan+1, ev.trkno)
+				seq.add ev
+			end
+		}
+	end
+end
+
+$channel = Array.new(16) {|i| Channel.new(i)}
+
+
+if ARGV.length != 2
+	puts "command is 'Resustain <original.mid> <revised.mid>'"
+	exit
+end
+open(ARGV[0]) {|f|
+	mr = Midifile.new f
+	out = Midifile.new
+	MidiEvent.deltaTicks = false;	# use absolute tick count
+	mr.each {|ev|
+		case ev.code
+		when NOTE_ON:
+			if ev.data2 > 0 then
+				$channel[ev.chan].key_down(ev, out)
+			else
+				$channel[ev.chan].key_up(ev, out)
+			end
+		when NOTE_OFF: $channel[ev.chan].key_up(ev, out)
+		when CONTROL_CHANGE:
+			if ev.data1 == 64 && ev.data2 >= 64 then
+				$channel[ev.chan].pedal_down()
+			elsif ev.data1 == 64 && ev.data2 < 64 then
+				$channel[ev.chan].pedal_up(ev, out)
+			else out.add ev
+			end
+		else out.add ev
+		end
+	}
+	open(ARGV[1],"w") {|fw|
+		out.to_stream(fw) if out.vet()
+	}
+}
+

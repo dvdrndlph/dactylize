@@ -1,0 +1,22 @@
+#! /usr/bin/env ruby
+
+# Script to generate a Format 0 midifile from a Format 1 source
+
+require 'midifile.rb'
+
+if ARGV.length != 2
+  puts "command is 'SMFformat0 <fmt1-in.mid> <fmt0-out.mid>'"
+  exit
+end
+out = Midifile.new
+open(ARGV[0]) {|f|
+  mr = Midifile.new f
+  out.format = 0
+  mr.each {|ev|
+     ev.trkno = 0 if ev.trkno
+     out.add(ev)
+  }
+}
+open(ARGV[1],"w") {|fw|
+  out.to_stream(fw) if out.vet()
+}

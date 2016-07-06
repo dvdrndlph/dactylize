@@ -1,0 +1,491 @@
+#! /usr/bin/env ruby
+
+# Standard Midifile Lister
+# -- instrument and controller names according to the GM standard
+
+require 'midifile.rb'
+
+## Tables of General Midi equivalences:
+######################################
+
+Octave_set = [
+	'C',
+	'C#/Db',
+	'D',
+	'D#/Eb',
+	'E',
+	'F',
+	'F#/Gb',
+	'G',
+	'G#/Ab',
+	'A',
+	'A#/Bb',
+	'B',
+]
+
+Program_set = [
+	'Acoustic Piano',
+	'Bright Piano',
+	'Electric Grand',
+	'Honky Tonk',
+	'Electric Piano 1',
+	'Electric Piano 2',
+	'Harpsichord',
+	'Clavinet',
+	'Celesta',
+	'Glockenspiel',
+	'Music Box',
+	'Vibraphone',
+	'Marimba',
+	'Xylophone',
+	'Tubular Bells',
+	'Dulcimer',
+	'Drawbar Organ',
+	'Percussive organ',
+	'Rock Organ',
+	'Church Organ',
+	'Reed Organ',
+	'Accordion',
+	'Harmonica',
+	'Bandoneon',
+	'Acoustic Guitar',
+	'Steel Guitar',
+	'Jazz Guitar',
+	'Clean Elec. Guitar',
+	'Muted Elec. Guitar',
+	'Overdrive Guitar',
+	'Distortion Guitar',
+	'Guitar Harmonics',
+	'Acoustic Bass',
+	'Fingered Elec. Bass',
+	'Picked Elec. Bass',
+	'Fretless Bass',
+	'Slap Bass 1',
+	'Slap Bass 2',
+	'Synth Bass 1',
+	'Synth Bass 2',
+	'Violin',
+	'Viola',
+	'Cello',
+	'Contrabass',
+	'Tremolo Strings',
+	'Pizzicato',
+	'Harp',
+	'Tympani',
+	'Marcato Strings',
+	'Slow Strings',
+	'Synth Strings 1',
+	'Synth Strings 2',
+	'Choir Aahs',
+	'Voice Oohs',
+	'Synth Voice',
+	'Orchestra Hit',
+	'Trumpet',
+	'Trombone',
+	'Tuba',
+	'Muted Trumpet',
+	'French Horn',
+	'Brass Section',
+	'Synth Brass 1',
+	'Synth Brass 2',
+	'Soprano Sax',
+	'Alto Sax',
+	'Tenor Sax',
+	'Baritone Sax',
+	'Oboe',
+	'English Horn',
+	'Bassoon',
+	'Clarinet',
+	'Piccolo',
+	'Flute',
+	'Recorder',
+	'Pan Flute',
+	'Bottle Blow',
+	'Shakuhachi',
+	'Whistle',
+	'Ocarina',
+	'Squarewave Lead',
+	'Sawtooth Lead',
+	'Calliope Lead',
+	'Chiffer Lead',
+	'Charang lead',
+	'Voice Lead',
+	'Fifths Lead',
+	'Bass & Lead',
+	'New Age Pad',
+	'Warm Pad',
+	'Polysynth Pad',
+	'Choir Pad',
+	'Bowed Pad',
+	'Metal Pad',
+	'Halo Pad',
+	'Sweep Pad',
+	'FX Rain',
+	'FX Soundtrack',
+	'FX Crystal',
+	'FX Atmosphere',
+	'FX Brightness',
+	'FX Goblins',
+	'FX Echoes',
+	'FX Sci-Fi',
+	'Sitar',
+	'Banjo',
+	'Shamisen',
+	'Koto',
+	'Kalimba',
+	'Bagpipes',
+	'Fiddle',
+	'Shannai',
+	'Tinkle Bell',
+	'Agogo',
+	'Steel Drums',
+	'Woodblock',
+	'Taiko Drum',
+	'Melodic Drum',
+	'Synth Drum',
+	'Reverse Cymbal',
+	'Guitar Fret Noise',
+	'Breath Noise',
+	'Seashore',
+	'Bird Tweet',
+	'Telephone',
+	'Helicopter',
+	'Applause',
+	'Gunshot',
+	nil
+]
+
+Controller_set = {
+	0=>'Bank Select (MSB)',
+	1=>'Modulation (MSB)',
+	2=>'Breath Control (MSB)',
+	4=>'Foot Pedal (MSB)',
+	5=>'Portamento Time (MSB)',
+	6=>'Data Entry (MSB)',
+	7=>'Main Volume (MSB)',
+	8=>'Balance (MSB)',
+	10=>'Pan (MSB)',
+	11=>'Expression (MSB)',
+	12=>'Effects-Type #1 (MSB)',
+	13=>'Effects-Type #2 (MSB)',
+	16=>'Gen. Purpose 1 (MSB)',
+	17=>'Gen. Purpose 2 (MSB)',
+	18=>'Gen. Purpose 3 (MSB)',
+	19=>'Gen. Purpose 4 (MSB)',
+	32=>'Bank Select (LSB)',
+	64=>'Sustain Pedal',
+	65=>'Portamento Pedal',
+	66=>'Sustenuto Pedal',
+	67=>'Soft Pedal',
+	91=>'Reverb Depth',
+	93=>'Chorus Depth',
+	98=>'NRPN LSB',
+	99=>'NRPN MSB',
+	100=>'RPN LSB',
+	101=>'RPN MSB',
+	120=>'All Sounds Off',
+	121=>'Reset All Controllers',
+	123=>'All Notes Off',
+	126=>'Mono Mode On',
+	127=>'Poly Mode On'
+}
+
+Percussion_set = {
+	35=>'Acoustic Bass Drum',
+	36=>'Bass Drum 1',
+	37=>'Side Stick',
+	38=>'Acoustic Snare',
+	39=>'Hand Clap',
+	40=>'Electric Snare',
+	41=>'Low Floor Tom',
+	42=>'Closed Hi Hat',
+	43=>'High Floor Tom',
+	44=>'Pedal Hi-Hat',
+	45=>'Low Tom',
+	46=>'Open Hi-Hat',
+	47=>'Low-Mid Tom',
+	48=>'Hi-Mid Tom',
+	49=>'Crash Cymbal 1',
+	50=>'High Tom',
+	51=>'Ride Cymbal 1',
+	52=>'Chinese Cymbal',
+	53=>'Ride Bell',
+	54=>'Tambourine',
+	55=>'Splash Cymbal',
+	56=>'Cowbell',
+	57=>'Crash Cymbal 2',
+	58=>'Vibraslap',
+	59=>'Ride Cymbal 2',
+	60=>'Hi Bongo',
+	61=>'Low Bongo',
+	62=>'Mute Hi Conga',
+	63=>'Open Hi Conga',
+	64=>'Low Conga',
+	65=>'High Timbale',
+	66=>'Low Timbale',
+	67=>'High Agogo',
+	68=>'Low Agogo',
+	69=>'Cabasa',
+	70=>'Maracas',
+	71=>'Short Whistle',
+	72=>'Long Whistle',
+	73=>'Short Guiro',
+	74=>'Long Guiro',
+	75=>'Claves',
+	76=>'Hi Wood Block',
+	77=>'Low Wood Block',
+	78=>'Mute Cuica',
+	79=>'Open Cuica',
+	80=>'Mute Triangle',
+	81=>'Open Triangle'
+}
+
+###########################################################
+
+## Event handling methods:
+#########################
+
+$division = 240	# should get adjusted...
+$tempo = 500000
+
+def file_header(format, ntrks, division)
+	$division = division
+	if division < 0 then
+		frames = -(division >> 8)
+		tpf = division & 0xff
+		divstr = "#{frames} frames/sec, #{tpf} ticks/frame (SMPTE)"
+	else
+		divstr = "#{division} ticks/quarter-note"
+	end
+	print "File is format #{format} with #{ntrks} track#{ntrks>1 ? 's' : ''}"+
+		"-- division #{divstr}\n"
+end
+
+
+def start_track(track)
+	print "Begin Track #{track}\n"
+end
+
+def end_track(time, track)
+	print "End of Track #{track} at #{time} ticks\n"
+end
+
+def end_file()
+end
+
+
+
+def notestr(key)
+	"#{Octave_set[key%12]}-#{key/12}"
+end
+
+def timeprint(time)
+	print "#{time}:\t"
+end
+
+def tempo(time, data)
+	timeprint(time)
+	$tempo = (((data[0]<<8) + data[1])<<8) + data[2]
+	print "Tempo: #{$tempo} microsec/quarter-note\n"
+end
+
+def note_on(time, chan, key, vel, running)
+	timeprint(time)
+	if chan == 10
+		name = "#{Percussion_set[key]} [#{key}]"
+		name = name || "note #{key}"
+	  print "Percussion #{vel==0? "OFF(0)" : "On"}  #{name}"+
+	     " #{vel==0? '' : "vel=#{vel}"}\n"
+	else
+	  print "Note On#{vel==0? "=OFF" : ""} chan #{chan} #{notestr(key)}"+
+	     " [#{key}] #{vel==0? '' : "vel=#{vel}"} #{running ? "[R]" : ""}\n"
+	end
+end
+
+def note_off(time, chan, key, vel, running)
+	timeprint(time)
+	if chan == 10
+		name = "#{Percussion_set[key]} [#{key}]"
+		name = name || "note #{key}"
+		print "Percussion Off  #{name}\n"
+	else
+	  print "Note Off chan #{chan}  #{notestr(key)} [#{key}] (vel=#{vel}) #{running ? "[R]" : ""}\n"
+	end
+end
+
+def program_change(time, chan, prog, running)
+	timeprint(time)
+	## GM likes instrument numbers to start from 1 (but array begins at 0!)
+	print "Program Change chan #{chan} #{Program_set[prog]} [#{prog+1}] #{running ? "[R]" : ""}\n"
+end
+
+def control_change(time, chan, cntrlr, value, running)
+	timeprint(time)
+	## Controllers seem to start from 0, though...
+	name = "#{Controller_set[cntrlr]} [#{cntrlr}]"
+	name = name || "cntrlr #{cntrlr} (Unspecified)"
+	print "Control Change chan #{chan} #{name} value=#{value} #{running ? "[R]" : ""}\n"
+end
+
+def pitch_bend(time, chan, value, running)
+	timeprint(time)
+	print "Pitchbend chan #{chan} offset=#{value} #{running ? "[R]" : ""}\n"
+end
+
+def channel_touch(time, chan, value, running)
+	timeprint(time)
+	print "Channel Aftertouch chan #{chan} value=#{value} #{running ? "[R]" : ""}\n"
+end
+
+def poly_touch(time, chan, key, value, running)
+	timeprint(time)
+	print "Poly Aftertouch chan #{chan} key #{key} value=#{value} #{running ? "[R]" : ""}\n"
+end
+
+
+def sysex(time, form, length, data)
+	timeprint(time)
+	print "SysEx#{form} #{length} bytes\n  ["
+	data.each_byte {|b| print "%x "%b}
+	print "]\n"
+end
+
+def timesig(time, data)
+	timeprint(time)
+	print "Time Signature: #{data[0]}/#{2**data[1]}, " +
+	   "clocks/click=#{data[2]}, 32nds/quarter=#{data[3]}\n"
+end
+
+
+def text(time, form, str)
+	timeprint(time)
+	print "#{form}: '#{str}'\n"
+end
+
+def meta(time, form, str)
+	timeprint(time)
+	print "#{form}: #{str}\n"
+end
+
+
+###########################################################
+
+## Central Midifile-event dispatcher:
+####################################
+
+def midievent(ev)
+	chan = ev.channel	## user convention
+
+	case ev.code
+	when HDR
+		file_header(ev.format, ev.ntrks, ev.division)
+	when TRK_START
+		start_track(ev.trkno)
+	when TRK_END
+		end_track(ev.time, ev.trkno)
+	when END_OF_FILE
+		end_file
+
+	when META
+		case MetaType[ev.meta]
+		### TBA -- but should just be ignored now...
+
+		## All these have 'text':
+		when "TEXT"
+			text(ev.time, "Text", ev.data)
+		when "TRACK_NAME"
+			text(ev.time, "Track Title", ev.data)
+		when "COPYRIGHT"
+			text(ev.time, "Copyright", ev.data)
+		when "INSTR_NAME"
+			text(ev.time, "Instrument", ev.data)
+		when "LYRIC"
+			text(ev.time, "Lyric", ev.data)
+		when "MARKER"
+			text(ev.time, "Marker", ev.data)
+		when "CUE_POINT"
+			text(ev.time, "Cue Point", ev.data)
+		when "DEVICE_NAME"
+			text(ev.time, "Device/Port", ev.data)
+
+		when "TEMPO"
+			# (data[0]<<16)+(data[1]<<8)+data[2]
+			tempo(ev.time, ev.data)
+		when "TIME_SIG"
+			# numerator=data[0], denominator=data[1],
+			# click=data[2], notesq = data[3]
+			timesig(ev.time, ev.data)
+
+		## This lot (crudely) use a generic method...:
+		when "SEQ_NUM"
+			# (data[0]<<8)+data[1]
+			meta(ev.time, "Sequence Number", "#{(ev.data[0]<<8)+ev.data[1]}")
+		when "MIDI_PORT"
+			# data[0]
+			meta(ev.time, "Midi Port", "#{ev.data[0]}")
+		when "CHAN_PFX"
+			# data[0]
+			meta(ev.time, "Chan Prefix", "#{ev.data[0]}")
+		when "KEY_SIG"
+			#key = data[0], mode = data[1]
+			# Can do better here...:
+			meta(ev.time, "Key Signature", "key=#{ev.data[0]}, mode=#{ev.data[1]}")
+		when "SMPTE"
+			# hour=data[0], minute=data[1], second=data[2]
+			# frame = data[3], fracframe = data[4]
+			meta(ev.time, "SMPTE",
+			 "#{ev.data[0]}:h, #{ev.data[1]}:m, #{ev.data[2]}:s, frame=#{ev.data[3]}, frac=#{ev.data[3]}")
+		when "SEQUENCER"
+			# length, data
+			nshow = ev.length <10? ev.length : 10
+			mstr = "size=%d "%ev.length
+			(0...nshow).each {|n| mstr << " %.2x"%ev.data[n]}
+			mstr << "..." if ev.length > nshow
+			meta(ev.time, "Sequencer Specific (7F)", mstr)
+		else ### "Unknown_meta_event"
+			# meta, length, data
+			meta(ev.time, "Unknown MetaEvent",
+			 "[#{"%x"%ev.meta}] size=#{ev.length}")
+		end
+
+	when SYSEX
+		sysex(ev.time, "", ev.length, ev.data)
+	when SYSEX_CONT
+		sysex(ev.time, "-continued", ev.length, ev.data)
+
+	when NOTE_ON
+		note_on(ev.time, chan, ev.data1, ev.data2, ev.running)
+	when NOTE_OFF
+		note_off(ev.time, chan, ev.data1, ev.data2, ev.running)
+	when PROGRAM_CHANGE
+		program_change(ev.time, chan, ev.data1, ev.running)
+	when CONTROL_CHANGE
+		control_change(ev.time, chan, ev.data1, ev.data2, ev.running)
+	when PITCH_BEND
+		pitch_bend(ev.time, chan, ev.data1, ev.running)
+	when CHANNEL_TOUCH
+		channel_touch(ev.time, chan, ev.data1, ev.running)
+	when POLY_TOUCH
+		poly_touch(ev.time, chan, ev.data1, ev.data2, ev.running)
+	end
+end
+
+###############################################################
+
+######################
+## Script main entry:
+######################
+
+if !ARGV[0] then
+	puts "Midifile argument required"
+	gets
+	exit
+end
+io = IO.popen("less -pTrack -j3 -", "w")
+$stdout = io
+puts "File: #{ARGV[0]}"	
+open(ARGV[0]) {|f|
+ Midifile.new(f).each{|ev|
+ 	midievent(ev)
+ }
+}

@@ -1,0 +1,44 @@
+#! /usr/bin/env ruby
+
+# This script will duplicate a midifile, but align all events
+# on a desired beat division.
+# The supplied 'division' parameter should (normally) be a power of two
+# indicating the whole-note division you want events to be quantized on.
+# Thus for alignment on quarter notes use a division of '4',
+# for 16th notes, use '16', etc.
+
+require 'midifile.rb'
+
+if ARGV.length != 3
+	puts "command is Quantize <original.mid> <quantized.mid> <division>'"
+	exit
+end
+div = ARGV[2].to_i
+qticks = 1	
+open(ARGV[0]) {|f|
+	mr = Midifile.new f
+	out = Midifile.new
+	mr.each {|ev|
+		if ev.code == HDR then
+			if ev.division < 0 then
+				puts "Can't handle SMPTE (at the moment)"
+				exit
+	 		end
+			qticks = ev.division*4/div	# ev.division is ticks/quarter-note
+		elsif ev.time
+			loq = ev.time % qticks
+			hiq = qticks - loq 
+			if hiq < loq then
+				newtime = ev.time + hiq
+			else
+				newtime = ev.time - loq
+			end
+			ev.time = newtime
+		end
+		out.add ev
+	}
+	open(ARGV[1],"w") {|fw|
+		out.to_stream(fw) if out.vet()
+	}
+}
+

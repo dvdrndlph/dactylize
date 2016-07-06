@@ -1,0 +1,458 @@
+                   Midifile Handling Classes for Ruby
+                   ================================== 
+                   
+                            -- November 2014 --
+                   
+midifile.rb is a small package of utility classes to manage reading and writing
+standard midifiles.  It has proved useful for quick creation of utilities to do
+odd jobs on midiles, and is intended to be minimal yet flexible.  (One aspect
+that is definitely minimal so far is error detection and reporting.  It will
+probably fail if things go wrong, but may not tell you why!)  To avoid confusion
+be aware that it's mostly only for handling Standard MIDI Files -- it doesn't
+directly deal with real time MIDI or such, though the latest version has a
+couple of hooks for doing so.  Some examples are included in this distribution
+that should demonstrate its use, and also provide some of those useful utilities.
+
+The basic idea is that, to read a file, you create a Midifile object and
+associate it with the file.  The object's 'each' method then retrieves a
+sequence of items that exactly represent the events and other data from the
+file in a form convenient for further processing.  (The file is processed
+as it is read, so it doesn't have to be read and stored in its entirety first.)
+
+There are a couple of ways to write a new file.  If you aren't changing the
+size of the file in any way -- say you just want to tranpose the notes --
+you can use the 'to_bytes' method of each item as it is read (and possibly
+modified) to get the appropriate byte-sequences to write out again to the
+new file.  This won't work, though, if there are any significant changes
+-- such as adding or deleting events -- as track headers would then have
+incorrect length values, and so on.
+
+To generate a variant file or a completely new one, you have to build it
+into another Midifile object (not initially associated with a file),
+and then write the whole file out with the object's 'to_stream' method.
+Recent releases added some methods that make generating new MIDI events
+a lot simpler.  The process is detailed more fully below.
+
+This (Nov 2014) release corrects a horrible bit of slapdash coding concerning
+the building of MidiEvents into a new file.  It produced correct results, but
+was far, far slower than it ought to be.  An extremely rarely encountered bug
+in the handling of running-status when metaevents get interspersed was also
+fixed.  There is now some provision for handling streams of MIDI events,
+rather than files, though the focus is still on the file side.
+
+An earlier (May 2010) release fixed a sneaky bug related to sorting the output
+that sometimes caused final notes to go awry; it now pays proper attention
+to the original order of 'simultaneous' events.  It also added 'channel'
+accessor methods that work with 'user' channel numbering (1..16) rather
+than the internal 0..15 range; this convention matches the 'gen...' event
+creation methods, so one never need be concerned with the internal range.
+
+
+Package:
+--------
+Distributed in this package are the 'midifile.rb' script itself, this
+README, and an 'EXAMPLES' folder with the following illustrative demos
+(the first four short and simple, the following more elaborate):
+
+    Transpose -- reads a midifile and writes a new one with all notes
+                (except ch. 10 percussion) transposed by a desired amount.
+                It copies the file directly, as described above.
+                Usage:
+                    Transpose <original> <transposed> <semitone offset>
+
+    SMFformat0 -- Writes out a Format-0 (single-track) midifile from a
+                source Format-1 (multitrack) file.  (The file is built,
+                then written):
+                    SMFformat0 <fmt-1-midifile in> <fmt-0 out>
+
+    SMFformat1 -- The reverse of the above -- creates a Format-1 from Format-0
+                (tracks assigned by channel number; tempo etc. to track 0).
+                    SMFformat0 <fmt-0-midifile in> <fmt-1 out>
+
+    makeachord -- An example to illustrate building a midifile from scratch.
+                It creates a file 'C-chord.mid' that just plays a C-Major
+                chord (with a few more events than really necessary...)
+                Examine the result with the following example, or play it
+                with your usual midifile player.
+                    (no command line arguments)
+
+    GMlister -- This attempts to be a complete listing utility for General
+                Midi files (to stdout).  It is fairly large (to cover all
+                possibilities with readable text), but straightforward.
+                    GMlister <midifile> [|more]
+
+    GMsummary -- A modification of the above that accumulates and summarizes
+                the events in the file rather than printing them individually.
+                It will accept more than one filename, listing them sequentially.
+                    GMsummary <midifile>...
+
+    SMPTEtoSMF -- A specialized example created to fill a need.
+                The midifile specification allows a less common time 'division'
+                value in the header that indicates absolute timing (ticks/second
+                rather than ticks/beat), using a negative value, and it turns out
+                that quite a few sequencers don't actually understand this!
+                (One I use plays the file backward!)  This short script calculates
+                a new header and tempo setting that uses the more standard
+                convention, copying the rest of the file unchanged.
+                    SMPTEtoSMF <smpte-midifile in> <smf out>
+
+These three were added in a previous release:
+
+    ChanTran   -- Duplicates a midifile, but changes the channels of events
+                 on selected channels (leaves unspecified ones alone).
+                    ChanTran <midifile in> <midifile out> <orig chan> <new chan>...
+
+    Quantize   -- Aligns all events on the nearest specified note-division.
+                For quarter-notes use 4 as the division argument; other
+                divisions are specified similarly, e.g. for 16th notes use '16'.
+                    Quantize <midifile in> <quantized out> <division>
+
+    Resustain  -- Removes all sustain-pedal events (Controller 64) and
+                replaces their effect by lengthening notes appropriately.
+                    Resustain <midifile in> <midifile out>
+
+For use, you should of course first move 'midifile.rb' somewhere into your
+Ruby library search path so that it is generally accessible.
+
+[Note that the above example scripts all use the "shebang" convention for
+**ix type systems, and assume that the utility '/usr/bin/env' is present.
+On other platforms you may have to prefix the command-line with "ruby "
+to run them.  e.g.: "ruby Transpose original.mid  pitched_down.mid -5"
+
+Also, Windows users will have to edit the scripts before they can use them,
+as midifiles are binary, and Windows -- unlike other OSs -- requires them
+to be opened differently.  Wherever an 'open(filename)' is used for reading,
+it will have to be changed to 'open(filename, "rb")'.  Similarly, for writing,
+change 'open(filename, "w")' to 'open(filename, "wb")'.]
+
+
+Classes:
+-------
+'midifile.rb' contains a few classes at the top level (it is not itself
+a module as it seemed easier to have its facilities directly accessible).
+The main ones are:
+
+    Midifile -- represents the entire file being read or written.
+                An input Midifile object holds no event or track data,
+                except temporarily.  One being built in memory on the other
+                hand holds a complete array of tracks, which in turn contain
+                all the events.
+    MidiTrack -- represents a track within the file.  In most cases
+                you won't need to be concerned with this. (And note
+                that for an input Midifile, a MidiTrack is only created
+                temporarily, and holds no event data.)
+    MidiItem -- represents the elements of the midifile.  Again, you're
+                unlikely to need this directly -- use its subclasses:
+        MidiHeader -- contains the information that is in the file
+                    header (MThd).
+        TrackHeader -- similarly contains the track header (MTrk).
+        MidiEvent -- contains the information for each Midi Event
+                    or Meta Event.
+
+The useful methods and attributes of each class are described in their
+sections below.  (There are others used for internal communication
+that are not mentioned here.  See the file itself if you need to know.)
+
+
+In Brief:
+--------
+The essential steps in reading an input midifile are:
+    Open the midifile as a File object.
+    Create a Midifile object with the file as a parameter.
+    Use the object's 'each' to iterate through the file.
+
+Thus an ultra-simple file lister (using default string representation) could be:
+
+      require 'midifile.rb'
+      open("myfile.mid", "r") {|f|
+        mf = Midifile.new(f)
+        mf.each {|elem|
+          puts elem
+        }
+      }
+  
+To write an exact copy (not particularly useful!), just open another file for
+writing ("fw", say) and replace the "puts" line above with:
+
+         fw.write(elem.to_bytes)
+
+[See the "Transpose" example for a slightly more useful application of this.]
+
+To build a new file, create an empty Midifile object, possibly set up its
+format and division (required if you are not copying the header from an
+existing file), then add the desired events.  When everything has been
+added, you then have to invoke the "vet" method to ensure that tracks, order
+and timing are correct. Finally the "to_stream" method will transmit it to
+an opened output file.  See the SMFformat0 and SMFformat1 examples.
+
+
+Methods and Attributes:
+----------------------
+
+class Midifile
+   Class Method:
+    new(stream=nil) -- Create a Midifile object.  If a file (or other IO object)
+                    is supplied as 'stream', the object is for reading only (with
+                    'each').  If no stream is supplied, the object is the basis of
+                    a new midifile, to be built and written out via the methods
+                    below.
+   Instance Methods:
+    each            -- Iterates through the file structure (either directly from
+                    the file or from the structure built in memory), yielding
+                    every element -- headers and events -- in sequence.
+    format=(format) -- Set the format (0 or 1, or even 2) of the midifile to
+                    be built.  Once a format has been set it cannot be changed
+                    (because a MidiHeader added during building would otherwise
+                    alter it).  So this method must be invoked before beginning
+                    to build on the object (unless you instead set the MidiHeader
+                    appropriately before adding it).  If you are not copying the
+                    header from an input file, you must set this appropriately,
+                    or you will get no output.
+    division=(division) -- Set the 'ticks/quarter-note' value for the header.
+                    Unlike the format, this can be changed at any time, so
+                    if you need to change its value, make sure you do it after
+                    the MidiHeader has been added (or, again, change the header
+                    itself before adding it).  Again, if you are not copying a
+                    header, you must provide a value here as there is no default
+                    (but 240 is reasonable).
+    addTrack(n=nil) -- This adds a new track to the object. Normally not used,
+                    as it is done automatically by 'add' when needed.
+    add(ev)         -- Add an event or a header element to the object.
+                    If the element refers to a track that does not yet exist
+                    that track is added as well.  Events may be added out of
+                    order (provided their timing is absolute rather than as
+                    a delta-time), as the 'vet' method will take care of that.
+    vet(use_running=true) -- "Vet" the structure for rationality before output.
+                    This essentially calls the method of the same name in each
+                    track object; in turn this ensures that the events are
+                    ordered by time (ticks) and adjusts their delta-time values
+                    to be correct; it also makes sure the track has the correct
+                    length and has a proper 'End-of-Track'.
+                    Unless 'use_running' is set false, events in the resulting
+                    output file will have Running Status (omitted status byte)
+                    as appropriate.
+    to_stream(stream) -- Writes the entire structure to IO object 'stream' to
+                    create a new midifile.
+   Readable Attributes:
+    instream        -- the object's input IO object, if any.
+    tracks          -- the array of currently existing tracks, if this object
+                    is being built in memory.  It is always nil if this is an
+                    input object.  (There may be nil slots in some situations.)
+
+
+class MidiTrack
+    [Methods not listed here -- they are normally only invoked by Midifile.
+    It is possible to access and process tracks individually, but this is not
+    documented here.  Please refer to the code itself for available methods etc.]
+
+
+class MidiItem
+   Class Method:
+    new(code, trkno=nil, time=nil, delta=0)
+       It is much simpler, and usually better, to use the various 'generator'
+       methods listed below, rather than creating an item directly.  This 'new'
+       may be needed for special purposes, though.
+            code -- Identifies the exact type of the item.  For MIDI events,
+                    this is usually the Status Byte value, ignoring the channel.
+                    For other items a code outside this range is used.  The list
+                    of these constants is at the beginning of midifile.rb.
+            trkno -- The track associated with this item (if any).
+            time -- the occurrence time of this event in ticks from the beginning
+                    of the file.  It will be nil if not appropriate.
+            delta -- The delta-time from the previous event in the sequence
+                    (on this track).  This value is what is read initially
+                    from a file and is used to determine 'time', but it will
+                    be adjusted as necessary by the 'Midifile#vet' method.
+                    When creating new events, you should use either absolute
+                    time or delta time -- not both -- consistently, and of course
+                    for deltas they must be generated in the correct order.
+   Instance Methods:
+    to_s    -- returns a brief text string describing the item.  It is overridden
+            suitably in the subclasses.
+    to_bytes -- returns the byte-sequence for this item required in a midifile.
+            (It is null at this level -- overridden in the subclasses.)
+    channel -- returns the ('user') channel number in the range 1..16; returns
+            nil if the item does not have a channel.
+    channel= -- sets the (internal) channel number corresponding to the ('user')
+            range 1..16.  (Caution -- no checks are made!)
+   Read/Write Attributes:
+        code, time, delta, trkno -- see 'new' above.
+   Readable Attributes (most are also writeable in the appropriate subclasses):
+        format, ntrks, division -- non-nil only for MidiHeader subclass.
+        chan, data1, data2, running -- non-nil for MIDI events.
+        length, data -- valid for MetaEvents and System Exclusive.
+        meta -- set to the byte identifying a MetaEvent type (nil otherwise).
+
+
+class MidiHeader < MidiItem
+   Class Method:
+    new(format, ntrks, division)
+        format -- the Midifile format: 0 = single track, 1 = multitrack, (2 = special)
+        ntrks -- number of tracks in the file (= 1 for format 0).
+        division -- ticks/quarter-note (or negative for SMPTE -- see midifile spec).
+   Instance Methods: -- see MidiItem above for description of common methods.
+    to_s
+    to_bytes
+
+
+class TrackHeader < MidiItem
+   Class Method:
+    new(trkno, length) -- normally only used internally.
+   Instance Methods: -- see MidiItem above for description of common methods.
+    to_s
+    to_bytes
+
+
+class MidiEvent < MidiItem
+   Class Methods:
+    new                       -- parameters as for the MidiItem 'new', except
+                                 that the 'code', rather than an integer may
+                                 be an array representing the actual MIDI bytes
+                                 of the event.  (System Exclusive sequences cannot
+                                 (yet) be entered this way.)  This can be useful
+                                 for handling an incoming MIDI stream. Otherwise
+                                 the rest of the data relevant to an event is
+                                 added as appropriate through the instance
+                                 attributes below.
+    track=(default_track|nil) -- class value used when generating new events,
+                                 if no track parameter is supplied to the generator
+                                 method; if nil, the track will be derived from the
+                                 channel, or 0 if not a channel event.  Initially 0.
+    channel=(default_channel) -- class value used when generating channel events
+                                 if not provided in the method parameters.
+                                 (Channel numbers are in MIDI 'user' convention
+                                 from 1 to 16, though internally they are kept
+                                 as 0..15.) Initially '1'.
+    deltaTicks=(use_deltas)   -- class value: true (initially) or false.  If false,
+                                 tick values are absolute (from time 0), otherwise
+                                 they represent delta intervals.
+    track                    |
+    channel                  |-- return current settings...
+    deltaTicks               |
+   Instance Methods: -- see MidiItem above for description of common methods.
+    to_s
+    to_bytes
+    to_midi	-- returns the real-time MIDI byte sequence for the event (as distinct
+               from 'to_bytes' which provides them in midifile form).
+    channel       (Note these are distinct from the Class Methods above!)
+    channel=
+   Read/Write Attributes: -- set or left nil as required.
+        chan -- The channel number (0..15) of this event, nil if not channel event.
+                NOTE the discrepancy between this and the user channel range (1..16),
+                which is what the generator methods use (and most listing programs
+                report)!  Remember this when setting or reading!  Use the new
+                'channel' instance methods above for a simpler life...
+        data1 -- The first data value (nil if none).  In all cases except one,
+                this is a single byte;  however, a pitch-bend offset combines
+                two bytes in a not-entirely-convenient manner, so in this case
+                'data1' holds the entire offset (range -8192..+8191). 
+        data2 -- The second data-byte, if any.  (nil for pitch-bend.)
+        running -- true if this event has Running Status.
+        length -- only for System Exclusive and MetaEvents, holds the actual
+                size of the data.
+        data -- holds the data bytes of a System Exclusive or MetaEvent.
+                Otherwise nil.
+        meta -- Holds the identifying code byte for the MetaEvent, else nil.
+
+
+Event Generator Methods (global)
+
+  These methods provide a convenient way to create events of a desired type 
+  that can be added to a file being built.  They all have a similar format,
+  with exact parameters varying as appropriate, and return an event of the
+  required type.
+  
+  All have 'ticks' as the first parameter.  By default this represents the
+  delta interval from the previous event on the same track, so you should
+  generate the events in the desired order.  If 'MidiEvent.deltaTicks=false'
+  has been invoked before the event is generated, ticks will represent absolute
+  intervals from the beginning of the file (so the order in which they are
+  generated is unimportant, as they will be sorted before output).  In all cases,
+  the exact interval in microseconds represented by a tick depends on the tempo
+  and the 'division' set in the header.
+  
+  Each method has two final optional parameters: 'chan' and 'track'.  If  either
+  of these is nil, the current setting of MidiEvent.channel or MidiEvent.track
+  will be used for the event.  If MidiEvent.track=nil has been set as well, the
+  track will be taken from the channel for channel events and will be 0 for others.
+  (So don't set this nil for Format 0 files, or confusion will result!)
+  
+  The acceptable range for a parameter depends on its function and in general
+  follow "user convention" rather than the internal one.  Thus 'chan' numbers
+  should range from 1 to 16 (though in this case '0' will actually be accepted
+  as well).  Program numbers are from 1 to 128, but the Controller range is
+  0 to 127 (as these seem to match most -- but not all! -- manuals).  Other
+  values, such as 'note', or 'velocity' have the actual MIDI range of 0 to 127.
+  Track numbers begin at 0, but have no specific upper limit.
+
+    genNoteOff(ticks, note, velocity=0, chan=nil, track=nil)
+
+    genNoteOn(ticks, note, velocity, chan=nil, track=nil)
+
+    genPolyTouch(ticks, note, pressure, chan=nil, track=nil)
+
+    genControlChange(ticks, controller, value, chan=nil, track=nil)
+
+    genProgramChange(ticks, program, chan=nil, track=nil)
+
+    genChannelTouch(ticks, pressure, chan=nil, track=nil)
+
+    genPitchBend(ticks, bend, chan=nil, track=nil)
+
+
+  The following methods generate appropriate metaevents.  They will in
+  general always be placed in Track 0, unless otherwise specified by parameter
+  or the MidiEvent.track setting.
+
+    genText(ticks, type, text, track=nil)
+        'type' should be one of the following constants:
+            TEXT, COPYRIGHT, TRACK_NAME, INSTR_NAME, LYRIC, MARKER, CUE_POINT
+
+    genTempo(ticks, micros=500000, track=nil)
+        500000 microsecs/quarter-note equates to the default 120 beats/minute
+
+    genTimeSignature(ticks, numer, denom, metronome=24, notat32=8, track=nil)
+        Please refer to the midifile specification if you need a full understanding
+        of this!  In general you probably won't have to bother with 'metronome'
+        or 'notat32' and can leave them at the defaults.  Note carefully, though,
+        that here you specify 'denom' as it would be shown on a score -- not
+        as the power-of-two actually used in the file. Thus for "3/4 time",
+        set numer=3, denom=4.
+
+    genKeySignature(ticks, sharpsflats, minor=0, track=nil)
+        'sharpsflats' is a positive number representing the number of sharps
+        in the key, or a negative one for flats. "C Major" is 0.  'minor' is
+        1 to indicate a minor key (e.g. "A Minor" for sharpsflats=0.).
+
+    genMeta(ticks, meta, data, track=nil)
+        This is provided to allow generating metaevents not covered by the
+        above.  'meta' should be the appropriate numeric code for the event
+        (from the midifile spec), and 'data' should be the desired sequence
+        of bytes -- either as a string or an array of bytes.
+
+    genSysEx(ticks, data, track=nil)
+        generates a System Exclusive byte sequence.  The data should be the
+        relevant bytes (as array or string), omitting the initial 0xF0 byte
+        that the protocol uses as identification.  If the last byte is not
+        0xF7, as required by the protocol, it will be appended.
+
+
+Global Constants:
+----------------
+
+A number of constants to reference event and item types etc., together with
+hashes to provide string equivalents, are defined at the beginning of midifile.rb.
+Please refer to the file itself for the list.
+
+
+Copyright
+---------
+
+midifile.rb is copyrighted free software by Pete Goodeve and is released
+under the same license as Ruby. See youthe Ruby license at:
+    http://www.ruby-lang.org/en/LICENSE.txt
+
+midifile.rb may be freely copied in its entirety provided that this notice, all
+source code, all documentation, and all other files are included.
+
+midifile.rb is Copyright (c) 2008-2014 by Pete Goodeve

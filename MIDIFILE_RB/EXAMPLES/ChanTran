@@ -1,0 +1,36 @@
+#! /usr/bin/env ruby
+
+# This script will duplicate a midifile, but move events to
+# different channels
+
+require 'midifile.rb'
+
+if ARGV.length < 4
+  puts "command is 'ChanTrans <original.mid> <newchannels.mid> <orig chan> <new chan>...'"
+  exit
+end
+src = nil
+chantran = {}
+ARGV[2..ARGV.length].each_with_index{|v,i|
+	v = v.to_i - 1	# user numbering!
+	if not (0..15) === v then
+		puts "invalid channel number %d"%(v+1)
+		exit
+		end
+	if i&1==1 then
+		chantran[src] = v
+		else src = v
+		end
+}
+open(ARGV[0]) {|f|
+  mr = Midifile.new f
+  open(ARGV[1],"w") {|fw|
+    mr.each {|ev|
+      if (NOTE_OFF..PITCH_BEND) === ev.code && chantran[ev.chan]
+      	ev.chan = chantran[ev.chan]
+      	end
+      fw.write(ev.to_bytes)
+    }
+  }
+}
+

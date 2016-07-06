@@ -1,0 +1,652 @@
+#! /usr/bin/env ruby
+
+# Ruby script to read a midifile and summarize its contents by channel
+
+require 'midifile.rb'
+
+## These global variables may be set to affect the amount of intermediate
+## data to be displayed:
+$show_progress=false			# enables listing of Changes as they occur
+$show_controllers=false			# also list each Controller Change
+$details = true		# enables summary at each Program Change ($show_progress true)
+$control_details = false	# enables listing of controllers in above summaries
+
+## Tables of General Midi equivalences:
+######################################
+
+Octave_set = [
+	'C',
+	'C#/Db',
+	'D',
+	'D#/Eb',
+	'E',
+	'F',
+	'F#/Gb',
+	'G',
+	'G#/Ab',
+	'A',
+	'A#/Bb',
+	'B',
+]
+
+Program_set = [
+	'Acoustic Piano',
+	'Bright Piano',
+	'Electric Grand',
+	'Honky Tonk',
+	'Electric Piano 1',
+	'Electric Piano 2',
+	'Harpsichord',
+	'Clavinet',
+	'Celesta',
+	'Glockenspiel',
+	'Music Box',
+	'Vibraphone',
+	'Marimba',
+	'Xylophone',
+	'Tubular Bells',
+	'Dulcimer',
+	'Drawbar Organ',
+	'Percussive organ',
+	'Rock Organ',
+	'Church Organ',
+	'Reed Organ',
+	'Accordion',
+	'Harmonica',
+	'Bandoneon',
+	'Acoustic Guitar',
+	'Steel Guitar',
+	'Jazz Guitar',
+	'Clean Elec. Guitar',
+	'Muted Elec. Guitar',
+	'Overdrive Guitar',
+	'Distortion Guitar',
+	'Guitar Harmonics',
+	'Acoustic Bass',
+	'Fingered Elec. Bass',
+	'Picked Elec. Bass',
+	'Fretless Bass',
+	'Slap Bass 1',
+	'Slap Bass 2',
+	'Synth Bass 1',
+	'Synth Bass 2',
+	'Violin',
+	'Viola',
+	'Cello',
+	'Contrabass',
+	'Tremolo Strings',
+	'Pizzicato',
+	'Harp',
+	'Tympani',
+	'Marcato Strings',
+	'Slow Strings',
+	'Synth Strings 1',
+	'Synth Strings 2',
+	'Choir Aahs',
+	'Voice Oohs',
+	'Synth Voice',
+	'Orchestra Hit',
+	'Trumpet',
+	'Trombone',
+	'Tuba',
+	'Muted Trumpet',
+	'French Horn',
+	'Brass Section',
+	'Synth Brass 1',
+	'Synth Brass 2',
+	'Soprano Sax',
+	'Alto Sax',
+	'Tenor Sax',
+	'Baritone Sax',
+	'Oboe',
+	'English Horn',
+	'Bassoon',
+	'Clarinet',
+	'Piccolo',
+	'Flute',
+	'Recorder',
+	'Pan Flute',
+	'Bottle Blow',
+	'Shakuhachi',
+	'Whistle',
+	'Ocarina',
+	'Squarewave Lead',
+	'Sawtooth Lead',
+	'Calliope Lead',
+	'Chiffer Lead',
+	'Charang lead',
+	'Voice Lead',
+	'Fifths Lead',
+	'Bass & Lead',
+	'New Age Pad',
+	'Warm Pad',
+	'Polysynth Pad',
+	'Choir Pad',
+	'Bowed Pad',
+	'Metal Pad',
+	'Halo Pad',
+	'Sweep Pad',
+	'FX Rain',
+	'FX Soundtrack',
+	'FX Crystal',
+	'FX Atmosphere',
+	'FX Brightness',
+	'FX Goblins',
+	'FX Echoes',
+	'FX Sci-Fi',
+	'Sitar',
+	'Banjo',
+	'Shamisen',
+	'Koto',
+	'Kalimba',
+	'Bagpipes',
+	'Fiddle',
+	'Shannai',
+	'Tinkle Bell',
+	'Agogo',
+	'Steel Drums',
+	'Woodblock',
+	'Taiko Drum',
+	'Melodic Drum',
+	'Synth Drum',
+	'Reverse Cymbal',
+	'Guitar Fret Noise',
+	'Breath Noise',
+	'Seashore',
+	'Bird Tweet',
+	'Telephone',
+	'Helicopter',
+	'Applause',
+	'Gunshot',
+	nil
+]
+
+Controller_set = {
+	0=>'Bank Select (MSB)',
+	1=>'Modulation (MSB)',
+	2=>'Breath Control (MSB)',
+	4=>'Foot Pedal (MSB)',
+	5=>'Portamento Time (MSB)',
+	6=>'Data Entry (MSB)',
+	7=>'Main Volume (MSB)',
+	8=>'Balance (MSB)',
+	10=>'Pan (MSB)',
+	11=>'Expression (MSB)',
+	12=>'Effects-Type #1 (MSB)',
+	13=>'Effects-Type #2 (MSB)',
+	16=>'Gen. Purpose 1 (MSB)',
+	17=>'Gen. Purpose 2 (MSB)',
+	18=>'Gen. Purpose 3 (MSB)',
+	19=>'Gen. Purpose 4 (MSB)',
+	32=>'Bank Select (LSB)',
+	64=>'Sustain Pedal',
+	65=>'Portamento Pedal',
+	66=>'Sustenuto Pedal',
+	67=>'Soft Pedal',
+	91=>'Reverb Depth',
+	93=>'Chorus Depth',
+	98=>'NRPN LSB',
+	99=>'NRPN MSB',
+	100=>'RPN LSB',
+	101=>'RPN MSB',
+	120=>'All Sounds Off',
+	121=>'Reset All Controllers',
+	123=>'All Notes Off',
+	126=>'Mono Mode On',
+	127=>'Poly Mode On'
+}
+
+Percussion_set = {
+	35=>'Acoustic Bass Drum',
+	36=>'Bass Drum 1',
+	37=>'Side Stick',
+	38=>'Acoustic Snare',
+	39=>'Hand Clap',
+	40=>'Electric Snare',
+	41=>'Low Floor Tom',
+	42=>'Closed Hi Hat',
+	43=>'High Floor Tom',
+	44=>'Pedal Hi-Hat',
+	45=>'Low Tom',
+	46=>'Open Hi-Hat',
+	47=>'Low-Mid Tom',
+	48=>'Hi-Mid Tom',
+	49=>'Crash Cymbal 1',
+	50=>'High Tom',
+	51=>'Ride Cymbal 1',
+	52=>'Chinese Cymbal',
+	53=>'Ride Bell',
+	54=>'Tambourine',
+	55=>'Splash Cymbal',
+	56=>'Cowbell',
+	57=>'Crash Cymbal 2',
+	58=>'Vibraslap',
+	59=>'Ride Cymbal 2',
+	60=>'Hi Bongo',
+	61=>'Low Bongo',
+	62=>'Mute Hi Conga',
+	63=>'Open Hi Conga',
+	64=>'Low Conga',
+	65=>'High Timbale',
+	66=>'Low Timbale',
+	67=>'High Agogo',
+	68=>'Low Agogo',
+	69=>'Cabasa',
+	70=>'Maracas',
+	71=>'Short Whistle',
+	72=>'Long Whistle',
+	73=>'Short Guiro',
+	74=>'Long Guiro',
+	75=>'Claves',
+	76=>'Hi Wood Block',
+	77=>'Low Wood Block',
+	78=>'Mute Cuica',
+	79=>'Open Cuica',
+	80=>'Mute Triangle',
+	81=>'Open Triangle'
+}
+
+###########################################################
+
+## Classes to store and manage the collected data:
+#################################################
+
+class ProgramData
+	def initialize(prog=nil, time=nil)
+		@program = prog
+		@time = time
+		@controls = []
+		@keys = []
+		@bends = 0
+	end
+	attr_accessor :controls, :keys, :bends, :bankhi, :banklo
+	attr_reader :time, :program
+end
+
+class ChannelData
+	@@channels = []
+	def ChannelData.[] (n)
+		@@channels[n] = @@channels[n] || ChannelData.new(n)
+	end
+	def ChannelData.each
+		@@channels.each {|chan| yield chan if chan} if @@channels
+	end
+	def ChannelData.clear
+		@@channels.clear
+	end
+	def initialize(n)
+		@chan = n
+		@tracks = []
+		@currprog = ProgramData.new
+		@programs = [@currprog]
+		@controls = []
+		@keys = []
+		@bends = 0
+	end
+	attr_reader :chan, :tracks, :programs, :currprog, :controls, :keys, :bends
+	attr_reader :nonGM
+	def track(trk)
+		@tracks << trk
+	end
+	def key(key)
+		@keys[key] = (@keys[key] || 0) + 1	
+		@currprog.keys[key] = (@keys[key] || 0) + 1	
+	end
+	def program(prog, time=nil)
+		@currprog = ProgramData.new(prog, time)
+		@currprog.bankhi = @bankhi	
+		@currprog.banklo = @banklo	
+		@programs << @currprog
+	end
+	def control(cntrl, val)
+		@controls << cntrl
+		@currprog.controls << cntrl
+		@bankhi = val if cntrl == 0
+		@banklo = val if cntrl == 32
+		# gets set if bank ever nonzero; untouched otherwise
+		@nonGM = true if (cntrl == 0 || cntrl == 32) && val > 0
+	end
+	def bend
+		@bends += 1
+		@currprog.bends += 1
+	end
+end
+
+############################################################
+
+## Converting data to appropriate strings:
+#########################################
+
+def notestr(key)
+	"#{Octave_set[key%12]}-#{key/12}"
+end
+
+def programStr(p, cd)
+	return nil if !p.program
+	perc = cd.chan == 10
+	if cd.nonGM then
+		hi = p.bankhi || 0
+		lo = p.banklo || 0
+		s = "Bank %d/%d: "%[hi, lo] +
+			 "Program #{p.program+1} (#{perc ? "Percussion set" : Program_set[p.program]}?)"
+	else
+		s = "#{perc ? "Percussion set" : Program_set[p.program]} [#{p.program+1}]"
+	end
+	s << " at #{p.time}" if p.time
+	s
+end
+
+def controlStr(ctrl)
+	"#{ctrl}(#{Controller_set[ctrl]})"
+end
+
+def keyRange(keys)
+	min = max = peak = nil
+	pkval = 0
+	keycount = playcount = 0
+	keys.each_with_index {|p, i|
+	  if p
+		  max = i
+		  min = i if !min
+		  keycount += 1
+		  playcount += p
+		  if  p > pkval
+		  	peak = i
+		  	pkval = p
+		  end
+	  end
+	}
+	"Range: #{min}[#{notestr(min)}]..#{max}[#{notestr(max)}]" +
+	 " (#{keycount}/#{max - min + 1} notes)\n    #{playcount} played," +
+	 " most: #{peak}[#{notestr(peak)}] [#{pkval} times]"
+end
+
+def percSet(keys)
+	min = max = peak = nil
+	pkval = 0
+	count = 0
+	s = ''
+	keys.each_with_index {|p, i|
+	  if p
+		  max = i
+		  min = i if !min
+		  count += p
+		  if  p > pkval
+		  	peak = i
+		  	pkval = p
+		  end
+		  s << "#{i} (#{Percussion_set[i]})\n"
+	  end
+	}
+	s + "Range: #{min}..#{max}" +
+	 "  #{count} played, most: #{peak}[#{Percussion_set[peak]}] [#{pkval} times]"
+end
+
+def showChanData(cdata)
+	prog = cdata.currprog
+	return if !$show_details
+	return if prog.keys.empty? && (prog.controls.empty? || !$control_details)
+	puts " Channel #{cdata.chan}:"
+	if $control_details && !prog.controls.empty?
+		puts "  Controls: "
+		prog.controls.uniq.each {|p| puts "   #{controlStr(p)}"}
+	end
+	puts " " + keyRange(prog.keys) if !prog.keys.empty?
+end
+
+def showCurrData
+	ChannelData.each {|cd|
+		showChanData(cd)
+		cd.program(nil)	#don't want this data coming back
+	}
+end
+
+###################################################################
+
+## Event handling methods (complete set with dummy unused ones):
+###############################################################
+
+def timeprint(time)
+	print "#{time}:\t"
+end
+
+$division = 240	# should get adjusted...
+$tempo = 500000
+
+def file_header(format, ntrks, division)
+	$division = division
+	$format = format
+	if division < 0 then
+		frames = -(division >> 8)
+		tpf = division & 0xff
+		divstr = "#{frames} frames/sec, #{tpf} ticks/frame (SMPTE)"
+	else
+		divstr = "#{division} ticks/quarter-note"
+	end
+	fname = $arg ? "'#{$arg}' " : ""
+	print "File #{fname}is format #{format} with #{ntrks} track#{ntrks>1 ? 's' : ''}"+
+		"-- division #{divstr}\n"
+end
+
+def start_track(track)
+	puts "Track #{track}"
+	$notes = 0
+end
+
+def end_track(time, track)
+	puts $notes > 0 ? "   #{$notes} notes" : "   no note events"
+	if $show_progress
+		showCurrData
+		puts "End of Track #{track} at #{time} ticks"
+		puts
+	end
+	$chan = nil
+end
+
+def end_file()
+end
+
+
+
+def tempo(time, data)
+	$tempo = (((data[0]<<8) + data[1])<<8) + data[2]
+	if $show_progress
+		timeprint(time)
+		print "Tempo: #{$tempo} microsec/quarter-note\n"
+	end
+end
+
+def note_on(time, chan, key, vel, track)
+	if vel > 0
+		ChannelData[chan].key(key)
+		$notes = $notes+1
+	end
+end
+
+def note_off(time, chan, key, vel, track)
+end
+
+def program_change(time, chan, prog, track)
+	## GM likes instrument numbers to start from 1 (but array begins at 0!)
+	chandata = ChannelData[chan] 
+	if $show_progress
+		showChanData(chandata)
+		timeprint(time)
+ 		if chan == 10
+			print "Percussion channel Program #{prog+1}\n"
+		else
+			print "Program Change chan #{chan} #{Program_set[prog]} [#{prog+1}]\n"
+		end
+	end
+	chandata.program(prog, time)	
+end
+
+def control_change(time, chan, cntrlr, value, track)
+	if $show_progress && $show_controllers
+		timeprint(time)
+		## Controllers seem to start from 0, though...
+		name = "#{Controller_set[cntrlr]} [#{cntrlr}]"
+		name = name || "cntrlr #{cntrlr} (Unspecified)"
+		print "Control Change chan #{chan} #{name} value=#{value}\n"
+	end
+	ChannelData[chan].control(cntrlr, value)	
+end
+
+def pitch_bend(time, chan, value, track)
+	ChannelData[chan].bend()	
+end
+
+def channel_touch(time, chan, value, track)
+end
+
+def poly_touch(time, chan, key, value, track)
+end
+
+
+def sysex(time, form, length, data)
+end
+
+def text(time, form, str)
+	print "#{form}: '#{str}'\n"
+end
+
+###########################################################
+
+## Central Midifile-event dispatcher:
+####################################
+
+def midievent(ev)
+	if ev.chan then
+		chan = ev.channel	## user convention
+		if $format == 1 and chan != $chan  then
+			$chan = chan
+			puts "  ...drives channel #{$chan}"
+		end
+	end
+	case ev.code
+	when HDR
+		file_header(ev.format, ev.ntrks, ev.division)
+	when TRK_START
+		start_track(ev.trkno)
+	when TRK_END
+		end_track(ev.time, ev.trkno)
+	when END_OF_FILE
+		end_file
+
+	when META
+		case MetaType[ev.meta]
+		### TBA -- but should just be ignored now...
+
+		## All these have 'text':
+		when "TEXT"
+			#text(ev.time, "", ev.data)
+		when "TRACK_NAME"
+			text(ev.time, "  Track Title", ev.data)
+		when "COPYRIGHT"
+			#text(ev.time, "Copyright", ev.data)
+		when "INSTR_NAME"
+			text(ev.time, "  Instrument", ev.data)
+		when "LYRIC"
+			#text(ev.time, "Lyric", ev.data)
+		when "MARKER"
+			#text(ev.time, "Marker", ev.data)
+		when "CUE_POINT"
+			#text(ev.time, "Cue Point", ev.data)
+
+		when "SEQ_NUM"
+			# (data[0]<<8)+data[1]
+		when "MIDI_PORT"
+			# data[0]
+		when "CHAN_PFX"
+			# data[0]
+		when "TIME_SIG"
+			# numerator=data[0], denominator=data[1],
+			# click=data[2], notesq = data[3]
+		when "KEY_SIG"
+			#key = data[0], mode = data[1]
+		when "TEMPO"
+			# (data[0]<<16)+(data[1]<<8)+data[2]
+			tempo(ev.time, ev.data)
+		when "SMPTE"
+			# hour=data[0], minute=data[1], second=data[2]
+			# frame = data[3], fracframe = data[4]
+		when "SEQUENCER"
+			# length, data
+		else ### "Unknown_meta_event"
+			# meta, length, data
+		end
+
+	when SYSEX
+		sysex(ev.time, "", ev.length, ev.data)
+	when SYSEX_CONT
+		sysex(ev.time, "-continued", ev.length, ev.data)
+
+	when NOTE_ON
+		note_on(ev.time, chan, ev.data1, ev.data2, ev.trkno)
+	when NOTE_OFF
+		note_off(ev.time, chan, ev.data1, ev.data2, ev.trkno)
+	when PROGRAM_CHANGE
+		program_change(ev.time, chan, ev.data1, ev.trkno)
+	when CONTROL_CHANGE
+		control_change(ev.time, chan, ev.data1, ev.data2, ev.trkno)
+	when PITCH_BEND
+		pitch_bend(ev.time, chan, ev.data1, ev.trkno)
+	when CHANNEL_TOUCH
+		channel_touch(ev.time, chan, ev.data1, ev.trkno)
+	when POLY_TOUCH
+		poly_touch(ev.time, chan, ev.data1, ev.data2, ev.trkno)
+	end
+end
+
+###############################################################
+
+def collectData f
+	ChannelData.clear
+	Midifile.new(f).each{|ev|
+ 		midievent(ev)
+	}
+# 	f.close if f != $stdin
+
+	puts "\n==========================================\n\nOverall:\n-------\n"
+	ChannelData.each {|cd|
+		puts "Channel #{cd.chan}:"
+		progs = []	# will collect all with actual Program numbers
+		cd.programs.each {|p| progs << p if p.program}
+		if !progs.empty?
+			puts "  Programs:"
+			progs.each {|p|
+				puts "   " + programStr(p, cd)
+			}
+			puts
+		end
+		if !cd.controls.empty?
+			puts "  Controls: "
+			cd.controls.uniq.each {|p| puts "   #{controlStr(p)}"}
+			puts
+		end
+		if !cd.keys.empty?
+			puts cd.chan == 10 ? percSet(cd.keys) : keyRange(cd.keys)
+		end
+		puts
+	}
+end
+
+#########################################
+## Script entry point and Summary Section:
+#########################################
+
+# if ARGV[0] then f = open ARGV[0]
+# else f = $stdin
+# end
+# collectData(f)
+if ARGV[0] then
+	ARGV.each {|arg| $arg = arg
+		open($arg){|f| collectData(f)}
+		puts "*****************************************************************\n\n\n"
+	}
+else
+	$arg = nil
+	collectData($stdin)
+end
+
+

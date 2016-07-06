@@ -1,0 +1,23 @@
+#! /usr/bin/env ruby
+
+# Script to generate a Format 1 midifile from a Format 0 source
+# (tracks are assigned by channel number -- non-channel events to track 0)
+
+require 'midifile.rb'
+
+if ARGV.length != 2
+  puts "command is 'SMFformat1 <fmt0-in.mid> <fmt1-out.mid>'"
+  exit
+end
+out = Midifile.new
+open(ARGV[0]) {|f|
+   mr = Midifile.new f
+   out.format = 1
+   mr.each {|ev|
+      ev.trkno = ev.chan+1 if ev.chan
+      out.add(ev)
+   }
+}
+open(ARGV[1],"w") {|fw|
+  out.to_stream(fw) if out.vet()
+}

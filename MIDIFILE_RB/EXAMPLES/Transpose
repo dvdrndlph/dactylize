@@ -1,0 +1,26 @@
+#! /usr/bin/env ruby
+
+# This script will duplicate a midifile, but transpose all notes
+# by a specified number of semitones up or down
+
+require 'midifile.rb'
+
+if ARGV.length != 3
+  puts "command is 'Transpose <original.mid> <transposed.mid> <semitones>'"
+  exit
+end
+offset = ARGV[2].to_i
+# Don't allow offset notes to go outside allowable range:
+note_range = offset > 0 ? (0..(127-offset)) : (-offset..127)
+open(ARGV[0]) {|f|
+  mr = Midifile.new f
+  open(ARGV[1],"w") {|fw|
+    mr.each {|ev|
+      ev.data1 += offset if (NOTE_OFF..NOTE_ON) === ev.code &&
+        note_range === ev.data1 && ev.chan != 9
+        # percussion chan (internal numbering)^^
+      fw.write(ev.to_bytes)
+    }
+  }
+}
+

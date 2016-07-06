@@ -1,0 +1,40 @@
+#! /usr/bin/env ruby
+
+# 'makeachord'
+# This shows how to generate a midifile from scratch.
+# It simply creates a C-Major chord across three channels (just for illustration)
+
+require 'midifile.rb'
+
+ ## First create a midifile object to be filled with data:
+ out = Midifile.new
+ 
+ ## These two setup commands are required for a new midifile:
+ out.format = 1	# use multitrack format (for fun...)
+ out.division = 240	# this value (tichs/beat) is arbitrary but convenient
+ out.add ev = genTempo(0)	# set default tempo of 500000 micros/beat (120 BPM)
+ 
+ ## These settings are optional, included for illustration:
+ MidiEvent.deltaTicks=false	# we will use absolute tick counts rather than deltas
+ MidiEvent.track=nil	# the track of a a channel event is got from its channel
+ 
+ ## more not-strictly-necessary events:
+ out.add genTimeSignature(0, 3, 8)	# "3/8" time at 0 ticks (not meaningful here)
+ out.add genKeySignature(0, 2, 1)	# "2 sharps, minor" (again, nonsense here)
+ out.add genText(10, LYRIC, "Ruby, Ruby, Ruby...")	# Yeah, well...
+ 
+ ## Now generate the chord:
+ out.add genProgramChange(0, 1)	# Set default channel to piano
+ out.add genProgramChange(0, 1, 2)	# Set channels 2 & 3 the same
+ out.add genProgramChange(0, 1, 3)
+ out.add genNoteOn(10, 60, 88)	# Middle-C on default chan 1 (and hence track 1)
+ out.add genNoteOff(360, 60)	# off again 350 ticks later (no vel -- default chan)
+ out.add genNoteOn(10, 64, 88, 2)	# "E" on channel 2 (track 2)
+ out.add genNoteOff(360, 64, 0, 2)	# "E" off -- vel needed because chan specified
+ out.add genNoteOn(10, 67, 88, 3)	# "G" on channel 3
+ out.add genNoteOff(360, 67, 0, 3)	# ... and off again
+ 
+ ## ...and write out the file:
+ open("C-chord.mid","w") {|fw|
+   out.to_stream(fw) if out.vet()
+ }
