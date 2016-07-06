@@ -85,10 +85,9 @@ my %Track_Is_Occupied = ();
 my @Track_Events = ();
 my $First_Note_Time;
 
-sub get_output_track {
+sub get_output_events_for_track {
     my ($track_number) = @_;
     my @event = (['text_event', 0, "${File_Time}_track_${track_number}"]);
-    push @{$Track_Events[$track_number]}, \@event;
 
     my $prior_raw;
     foreach my $raw_event (@{$Track_Events[$track_number]}) {
@@ -102,7 +101,9 @@ sub get_output_track {
         $delta_time = int($delta_time * 1000 + 0.5);
         push @event, [$raw_event->{event}, $delta_time, 0,
             $raw_event->{note}, $raw_event->{velocity}];
+        $prior_raw = $raw_event;
     }
+    return \@event;
 }
 
 sub assign_to_track {
@@ -154,10 +155,12 @@ close MIDI;
 print Dumper \@Track_Events;
 
 my @Output_Track;
-foreach my $events (@Track_Events) {
-    my $track = MIDI::Track->new({ 'events' => $events }); 
+for (my $i = 0; $i < scalar @Track_Events; $i++) {
+    my $events = get_output_events_for_track($i);
+    my $track = MIDI::Track->new({'events' => $events}); 
     push @Output_Track, $track;
 }
+
 my $opus = MIDI::Opus->new({'format' => 1,
     'ticks' => 1000,
     'tracks' => \@Output_Track});
