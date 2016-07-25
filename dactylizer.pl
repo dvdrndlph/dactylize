@@ -21,8 +21,8 @@ my $MIDI_SUFFIX = '_midi';
 my $FINGER_SUFFIX = '_finger';
 my $COOKED_DIR = './output/cooked/';
 
-my $RIGHT_HAND = 0;
-my $LEFT_HAND = 1;
+my $RIGHT_HAND = 1;
+my $LEFT_HAND = 0;
 
 my %HAND_OUTPUT = (
     $RIGHT_HAND => '>',
@@ -152,7 +152,7 @@ while (my $midi_line = <MIDI>) {
 }
 close MIDI;
 
-print Dumper \@Track_Events;
+# print Dumper \@Track_Events;
 
 my @Output_Track;
 for (my $i = 0; $i < scalar @Track_Events; $i++) {
@@ -166,7 +166,6 @@ my $opus = MIDI::Opus->new({'format' => 1,
     'tracks' => \@Output_Track});
 $opus->write_to_file($Midi_Output_Path);
 
-die;
 # print Dumper \@Midi_Event;
 
 my %Finger_Event_For_Note;
@@ -240,7 +239,7 @@ sub get_fingering {
         return "x";
     }
 
-    my $striking_hand = $HAND_OUTPUT{$striking_event->{Hand}};
+    $striking_hand = $HAND_OUTPUT{$striking_event->{Hand}};
     my $striking_finger = $striking_event->{Finger_Array}->[0];
     my $fingering = "${striking_hand}${striking_finger}";
     if (not $releasing_event) {
@@ -271,6 +270,50 @@ foreach my $midi_event (@Midi_Event) {
 }
 
 open FINGERS, "> $Finger_Output_Path" or die "Bad abcDF output open";
-print FINGERS join('', @Fingering);
+# print FINGERS join('', @Fingering);
+my $fingering_str = '';
+my $last_hand = '';
+foreach my $fingering (@Fingering) {
+    if ($fingering eq 'x') {
+        $fingering_str .= $fingering;
+        next;
+    }
 
+    my $output_fingering = '';
+    if ($fingering =~ /([<>])(\d)(,([<>])(\d))?/) {
+        my $striking_hand = $1;
+        my $striking_finger = $2;
+        if (not $fingering_str) {
+            $fingering_str = $striking_hand;
+            $last_hand = $striking_hand;
+        }
+
+        if ($striking_hand ne $last_hand) {
+            $output_fingering .= $striking_hand;
+            $last_hand = $striking_hand;
+        }
+        $output_fingering .= $striking_finger;
+
+        my $releasing_hand = '';
+        my $releasing_finger = '';
+        if ($3) {
+            $releasing_hand = $4;
+            $releasing_finger = $5;
+            $output_fingering .= ',';
+            if ($releasing_hand and $releasing_hand ne $last_hand) {
+                $output_fingering .= $releasing_hand;
+                $last_hand = $releasing_hand;
+            }
+            $output_fingering .= $releasing_finger;
+        }
+        $fingering_str .= $output_fingering;
+    } else {
+        die "Bad fingering";
+    }
+}
+print FINGERS $fingering_str, "\n";
+close FINGERS;
+
+print "MIDI output written to $Midi_Output_Path\n";
+print "abcDF output written to $Finger_Output_Path\n";
 print "Done Dactylizing.\n\n";
