@@ -1,7 +1,7 @@
 /*
   dactylize.ino: Arduino sketch for patchbay circuit.
-  Based on code borrowed from *Digital Electronics for Musicians*
-  by Alexandros Drymonitis.
+  Based on code borrowed from Listing 10-7 in
+  *Digital Electronics for Musicians* by Alexandros Drymonitis.
 */
 
 #include <SPI.h>
@@ -13,12 +13,6 @@ const int NUM_OF_OUTPUT_CHIPS = 10;
 
 byte input_bytes[NUM_OF_INPUT_CHIPS] = { 0 };
 byte output_bytes[NUM_OF_OUTPUT_CHIPS] = { 0 };
-// we need two bytes for the connection byte
-// one for the input chip that is connected
-// one for the output pin that is connected
-// and one for the start character
-const int NUM_OF_DATA = 5;
-byte transfer_array[NUM_OF_DATA] = { 192 };
 
 const int NUM_OF_OUTPUT_PINS = NUM_OF_OUTPUT_CHIPS * 8;
 byte connection_matrix[NUM_OF_OUTPUT_PINS][NUM_OF_INPUT_CHIPS] = { 0 };
@@ -100,7 +94,7 @@ void loop() {
             int pin = j + (i * 8);
             bitSet(output_bytes[i], j);
             set_output();
-            delayMicroseconds(1000);
+            delayMicroseconds(10);
             get_input();
             detected_connection = check_connections(pin);
             bitClear(output_bytes[i], j);
