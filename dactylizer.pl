@@ -1,6 +1,29 @@
 #!/usr/bin/env perl -w
+# Copyright (c) 2016 David A. Randolph.
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following
+# conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
 # File: dactylizer.pl
-# Author: David Rndolph
+# Author: David Randolph
 # Date: 23 June 2016
 # Purpose: Process raw input to produce a MIDI file and corresponding
 # abcDF file.
@@ -11,6 +34,7 @@ use Data::Dumper;
 use File::Path;
 use MIDI;
 
+my $format_0_cmd = './SMFformat0';
 # The first (lowest) note on full keyboard is A0, which is MIDI 21.
 # my $MIDI_OFFSET = 21; # A0
 # The microKEY default setting starts at C3.
@@ -165,6 +189,8 @@ my $opus = MIDI::Opus->new({'format' => 1,
     'ticks' => 1000,
     'tracks' => \@Output_Track});
 $opus->write_to_file($Midi_Output_Path);
+system("$format_0_cmd $Midi_Output_Path $Midi_Output_Path")l
+die "Bad MIDI format 0 transformation" if $CHILD_ERROR;
 
 # print Dumper \@Midi_Event;
 

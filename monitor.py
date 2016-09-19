@@ -21,7 +21,7 @@ from time import sleep
 
 RAW_OUTPUT_DIR = './output/raw/'
 DACTYLIZER_CMD = './dactylizer.pl'
-SERIAL_PORT = '/dev/cu.usbmodem1421'
+SERIAL_PORT = '/dev/cu.usbmodem1411'
 BAUD_RATE = 115200
 start_time = time()
 file_time = int(start_time)
