@@ -33,9 +33,13 @@ use English;
 use warnings;
 use Data::Dumper;
 use File::Path;
+use List::MoreUtils qw(uniq);
 use MIDI;
 
-my $format_0_cmd = './SMFformat0';
+use constant TRUE => 1;
+use constant FALSE => 1;
+
+my $FORMAT_0_CMD = './SMFformat0';
 # The first (lowest) note on full keyboard is A0, which is MIDI 21.
 my $MIDI_OFFSET = 21; # A0
 # The microKEY default setting starts at C3.
@@ -101,7 +105,9 @@ print "Fingering file: $Finger_Path\n";
 mkpath $COOKED_DIR if not -d $COOKED_DIR;
 my $Midi_Output_Path = "${COOKED_DIR}${File_Time}.midi";
 my $Finger_Output_Path = "${COOKED_DIR}${File_Time}.abcdf";
+my $Event_Output_Path = "${COOKED_DIR}${File_Time}.txt";
 
+my @Finger_Event;
 my @Midi_Event;
 open MIDI, "< $Midi_Path" or die "Bad open of $Midi_Path";
 # note_on channel=0 note=65 velocity=6 time=904.565069914
@@ -154,6 +160,50 @@ sub assign_to_track {
     } # FIXME: Handle pedal events here.
 }
 
+sub hash_events {
+    my ($events, $key_field) = @_;
+    my %event_at_stamp;
+    foreach my $event (@{$events}) {
+        my $stamp = $event->{$key_field};
+        $event_at_stamp{$stamp} = []
+            if not defined $event_at_stamp{$stamp};
+        push @{$event_at_stamp{$stamp}}, $event;
+    }
+    return \%event_at_stamp;
+}
+
+sub print_interleaved_events {
+    my $midi_events = hash_events(\@Midi_Event, 'time');
+    my $finger_events = hash_events(\@Finger_Event, 'When');
+    my @key = keys(%{$midi_events});
+    push @key, keys(%{$finger_events});
+    @key = uniq @key;
+    foreach my $key (sort {$a <=> $b} @key) {
+        my $when = sprintf '%10.5f', $key;
+        my $output = '';
+        if (defined $midi_events->{$key}) {
+            foreach my $event (@{$midi_events->{$key}}) {
+                $output .= "At $when MIDI: $event->{note} $event->{event}\n";
+            }
+        }
+        if (defined $finger_events->{$key}) {
+            foreach my $event (@{$finger_events->{$key}}) {
+                my $note_num = $event->{Key} + $MIDI_OFFSET;
+                $output .= "At $when FING: $note_num ";
+                if (@{$event->{Finger_Array}}) {
+                    $output .= "touched by " . join(',', @{$event->{Finger_Array}});
+                } else {
+                    $output .= "released";
+                }
+                $output .= "\n";
+            }
+        }
+        print $output;
+        # print Dumper $midi_events->{$key}
+        # print Dumper $finger_events->{$key} if defined $finger_events->{$key}; 
+    }
+}
+
 while (my $midi_line = <MIDI>) {
     my %midi_event = ();
     my @token = split /\s+/, $midi_line;
@@ -182,7 +232,6 @@ close MIDI;
 my @Output_Track;
 for (my $i = 0; $i < scalar @Track_Events; $i++) {
     my $events = get_output_events_for_track($i);
-print Dumper $events;
     my $track = MIDI::Track->new({'events' => $events}); 
     push @Output_Track, $track;
 }
@@ -191,7 +240,7 @@ my $opus = MIDI::Opus->new({'format' => 1,
     'ticks' => 500,
     'tracks' => \@Output_Track});
 $opus->write_to_file($Midi_Output_Path);
-system("$format_0_cmd $Midi_Output_Path $Midi_Output_Path");
+system("$FORMAT_0_CMD $Midi_Output_Path $Midi_Output_Path");
 die "Bad MIDI format 0 transformation" if $CHILD_ERROR;
 
 # print Dumper \@Midi_Event;
@@ -214,6 +263,7 @@ while (my $finger_line = <FINGERS>) {
     $finger_event{Finger_Array} = \@finger_array;
     my $note_number = $finger_event{Key} + $MIDI_OFFSET;
     push @{$Finger_Event_For_Note{$note_number}}, \%finger_event;
+    push @Finger_Event, \%finger_event;
 }
 # print Dumper \%Finger_Event_For_Note;
 
@@ -341,6 +391,8 @@ foreach my $fingering (@Fingering) {
 }
 print FINGERS $fingering_str, "\n";
 close FINGERS;
+
+print_interleaved_events();
 
 print "MIDI output written to $Midi_Output_Path\n";
 print "abcDF output written to $Finger_Output_Path\n";
