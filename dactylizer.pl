@@ -29,6 +29,7 @@
 # abcDF file.
 #
 use strict;
+use English;
 use warnings;
 use Data::Dumper;
 use File::Path;
@@ -36,9 +37,9 @@ use MIDI;
 
 my $format_0_cmd = './SMFformat0';
 # The first (lowest) note on full keyboard is A0, which is MIDI 21.
-# my $MIDI_OFFSET = 21; # A0
+my $MIDI_OFFSET = 21; # A0
 # The microKEY default setting starts at C3.
-my $MIDI_OFFSET = 48; # C3
+# my $MIDI_OFFSET = 48; # C3
 
 my $RAW_DIR = './output/raw/';
 my $MIDI_SUFFIX = '_midi';
@@ -181,15 +182,16 @@ close MIDI;
 my @Output_Track;
 for (my $i = 0; $i < scalar @Track_Events; $i++) {
     my $events = get_output_events_for_track($i);
+print Dumper $events;
     my $track = MIDI::Track->new({'events' => $events}); 
     push @Output_Track, $track;
 }
 
 my $opus = MIDI::Opus->new({'format' => 1,
-    'ticks' => 1000,
+    'ticks' => 500,
     'tracks' => \@Output_Track});
 $opus->write_to_file($Midi_Output_Path);
-system("$format_0_cmd $Midi_Output_Path $Midi_Output_Path")l
+system("$format_0_cmd $Midi_Output_Path $Midi_Output_Path");
 die "Bad MIDI format 0 transformation" if $CHILD_ERROR;
 
 # print Dumper \@Midi_Event;

@@ -1,0 +1,25 @@
+X:1
+T:scales_c_major
+C:Beringer and Dunhill
+%%score { ( 1 ) | ( 2 ) }
+M:2/4
+K:Cmaj
+V:1 bass octave=-1
+V:2 bass octave=-1
+V:1
+L:1/16
+CDEF GFED|CDEF GFED|CDEF GFED|C8|
+CDEF GFED|CDEF GFED|CDEF GFED|C8|
+CDEF GFED|CDEF GFED|CDEF GFED|C8|
+CDEF GFED|CDEF GFED|CDEF GFED|C8|
+CDEF GFED|CDEF GFED|CDEF GFED|C8|
+CDEF GFED|CDEF GFED|CDEF GFED|C8|]
+V:2
+L:1/16
+z8|z8|z8|z8|
+z8|z8|z8|z8|
+z8|z8|z8|z8|
+z8|z8|z8|z8|
+z8|z8|z8|z8|
+z8|z8|z8|z8|]
+
