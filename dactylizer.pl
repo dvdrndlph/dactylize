@@ -50,8 +50,8 @@ my $MIDI_SUFFIX = '_midi';
 my $FINGER_SUFFIX = '_finger';
 my $COOKED_DIR = './output/cooked/';
 
-my $RIGHT_HAND = 1;
-my $LEFT_HAND = 0;
+my $RIGHT_HAND = 0;
+my $LEFT_HAND = 1;
 
 my %HAND_OUTPUT = (
     $RIGHT_HAND => '>',
@@ -393,6 +393,7 @@ print FINGERS $fingering_str, "\n";
 close FINGERS;
 
 print_interleaved_events();
+print $fingering_str, "\n";
 
 print "MIDI output written to $Midi_Output_Path\n";
 print "abcDF output written to $Finger_Output_Path\n";
