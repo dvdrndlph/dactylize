@@ -1,0 +1,8 @@
+note_on channel=0 note=60 velocity=54 time=6.09127688408
+note_off channel=0 note=60 velocity=64 time=6.33823299408
+note_on channel=0 note=62 velocity=58 time=6.3540520668
+note_off channel=0 note=62 velocity=64 time=6.60205698013
+note_on channel=0 note=64 velocity=61 time=6.6202890873
+note_off channel=0 note=64 velocity=64 time=6.89218187332
+note_on channel=0 note=65 velocity=70 time=6.89977407455
+note_off channel=0 note=65 velocity=64 time=7.83734297752

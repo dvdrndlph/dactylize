@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 # File: monitor.py
 # Date: 6 June 2016
 # Author: David Randolph
@@ -19,9 +19,11 @@ import subprocess
 from time import time
 from time import sleep
 
+mido.set_backend('mido.backends.rtmidi')
+
 RAW_OUTPUT_DIR = './output/raw/'
 DACTYLIZER_CMD = './dactylizer.pl'
-SERIAL_PORT = '/dev/cu.usbmodem1411'
+SERIAL_PORT = '/dev/cu.usbmodem1461'
 BAUD_RATE = 115200
 start_time = time()
 file_time = int(start_time)

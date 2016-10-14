@@ -1,0 +1,2 @@
+note_on channel=0 note=67 velocity=80 time=1.5787320137
+note_off channel=0 note=67 velocity=64 time=2.62689113617
