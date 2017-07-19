@@ -11,7 +11,7 @@
 #          
 import mido
 import serial
-import thread
+from multiprocessing import Process
 import signal
 import sys
 import os
@@ -23,66 +23,106 @@ mido.set_backend('mido.backends.rtmidi')
 
 RAW_OUTPUT_DIR = './output/raw/'
 DACTYLIZER_CMD = './dactylizer.pl'
-SERIAL_PORT = '/dev/cu.usbmodem1461'
+SERIAL_PORT = '/dev/cu.usbmodem14241'
 BAUD_RATE = 115200
 start_time = time()
 file_time = int(start_time)
 print file_time
 finger_file_path = RAW_OUTPUT_DIR + str(file_time) + '_finger'
 midi_file_path = RAW_OUTPUT_DIR + str(file_time) + '_midi'
+twiddle_file_path = RAW_OUTPUT_DIR + str(file_time) + '_twiddle'
+pick_file_path = RAW_OUTPUT_DIR + str(file_time) + '_pick'
 
 if not os.path.exists(RAW_OUTPUT_DIR):
     os.makedirs(RAW_OUTPUT_DIR)
-
-finger_file = open(finger_file_path, 'w')
-midi_file = open(midi_file_path, 'w')
 
 def get_usec_timestamp():
     offset_usec = time() - start_time
     return offset_usec
 
-def cleanup_and_exit(signal, frame):
-    print("Closing monitor session. . . .")
-    midi_file.close()
-    finger_file.close()
-    # Call dactylizer to generate .midi and .abcdf output.
-    subprocess.call([DACTYLIZER_CMD, str(file_time)])
-    sys.exit(0)
-
 def twiddle_thumbs():
-    count = 0
-    while count < 5:
-        sleep(5)
-        count += 1
-        print "%s: %s" % ("Twiddling", get_usec_timestamp())
+    twiddle_file = open(twiddle_file_path, 'w')
+    try:
+        while True:
+            msg = "{0}: {1}".format("Twiddling", get_usec_timestamp())
+            print(msg)
+            msg += "\n"
+            twiddle_file.write(str(msg)) 
+            sleep(2)
+    except KeyboardInterrupt:
+        print("INTerrupted twiddling.\n");
+    finally:
+        print("Clean up on aisle twiddle.")
+        twiddle_file.close()
+
+def pick_em():
+    pick_file = open(pick_file_path, 'w')
+    try:
+        while True:
+            msg = "{0}: {1}\n".format("Picking", get_usec_timestamp())
+            print(msg)
+            msg += "\n"
+            pick_file.write(str(msg)) 
+            sleep(2)
+    except KeyboardInterrupt:
+        print("INTerrupted picking.\n");
+    finally:
+        print("Clean up on aisle pick.")
+        pick_file.close()
     
 def monitor_arduino():
+    finger_file = open(finger_file_path, 'w')
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
-    while True:
-        msg = ser.readline().rstrip() + " When:" + str(get_usec_timestamp())
-        print msg
-        msg += "\n"
-        finger_file.write(str(msg)) 
+    try:
+        while True:
+            msg = ser.readline().rstrip() + " When:" + str(get_usec_timestamp())
+            print(msg)
+            msg += "\n"
+            finger_file.write(str(msg)) 
+    except KeyboardInterrupt:
+        print("INTerrupted Arduino monitoring.\n");
+    except:
+        print("UNKNOWN ERROR in Arduino monitoring: {1}".format(sys.exc_info()[0]))
+    finally:
+        print("Cleaning up Arduino monitor.")
+        finger_file.close()
 
 def monitor_midi():
+    midi_file = open(midi_file_path, 'w')
     inny = mido.open_input()
-    while True:
-        msg = inny.receive()
-        msg.time = get_usec_timestamp()
-        msg = str(msg)
-        print msg
-        msg += "\n" 
-        midi_file.write(str(msg))
-
-signal.signal(signal.SIGINT, cleanup_and_exit)
-# signal.pause()
+    try:
+        while True:
+            msg = inny.receive()
+            msg.time = get_usec_timestamp()
+            msg = str(msg)
+            print msg
+            msg += "\n" 
+            midi_file.write(str(msg))
+    except KeyboardInterrupt:
+        print("INTerrupted MIDI monitoring.\n");
+    except:
+        print("UNKNOWN ERROR in MIDI monitoring: {1}".format(sys.exc_info()[0]))
+    finally:
+        print("Cleaning up MIDI monitor.")
+        midi_file.close()
 
 try:
     print("Monitoring Arduino and MIDI USB input. . . .")
-    thread.start_new_thread(monitor_arduino, ())
-    thread.start_new_thread(monitor_midi, ())
+    arduino_proc = Process(target=monitor_arduino)
+    midi_proc = Process(target=monitor_midi)
+    arduino_proc.start()
+    midi_proc.start()
+    arduino_proc.join()
+    midi_proc.join()     
+    # twiddler = Process(target=twiddle_thumbs)
+    # picker = Process(target=pick_em)
+    # twiddler.start()
+    # picker.start()
+    # twiddler.join()
+    # picker.join()
 except Exception, e:
-    print("ERROR: Could not fork thread. " + str(e))
+    print("ERROR: Could not fork process. " + str(e))
 
-while True:
-    pass
+# Call dactylizer to generate .midi and .abcdf output.
+subprocess.call([DACTYLIZER_CMD, str(file_time)])
+sys.exit(0)
