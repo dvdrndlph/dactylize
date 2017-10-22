@@ -11,19 +11,28 @@
 #          
 import mido
 import serial
+import serial.tools.list_ports
 from multiprocessing import Process
 import signal
 import sys
 import os
+import re
 import subprocess
 from time import time
 from time import sleep
+
+serial_ports = serial.tools.list_ports.comports()
+modem_pat = re.compile('^/dev/cu.usbmodem')
+for port in serial_ports:
+    if modem_pat.match(port.device):
+        serial_port = port.device
+        break
 
 mido.set_backend('mido.backends.rtmidi')
 
 RAW_OUTPUT_DIR = './output/raw/'
 DACTYLIZER_CMD = './dactylizer.pl'
-SERIAL_PORT = '/dev/cu.usbmodem14241'
+# SERIAL_PORT = '/dev/cu.usbmodem1411'
 BAUD_RATE = 115200
 start_time = time()
 file_time = int(start_time)
@@ -40,39 +49,9 @@ def get_usec_timestamp():
     offset_usec = time() - start_time
     return offset_usec
 
-def twiddle_thumbs():
-    twiddle_file = open(twiddle_file_path, 'w')
-    try:
-        while True:
-            msg = "{0}: {1}".format("Twiddling", get_usec_timestamp())
-            print(msg)
-            msg += "\n"
-            twiddle_file.write(str(msg)) 
-            sleep(2)
-    except KeyboardInterrupt:
-        print("INTerrupted twiddling.\n");
-    finally:
-        print("Clean up on aisle twiddle.")
-        twiddle_file.close()
-
-def pick_em():
-    pick_file = open(pick_file_path, 'w')
-    try:
-        while True:
-            msg = "{0}: {1}\n".format("Picking", get_usec_timestamp())
-            print(msg)
-            msg += "\n"
-            pick_file.write(str(msg)) 
-            sleep(2)
-    except KeyboardInterrupt:
-        print("INTerrupted picking.\n");
-    finally:
-        print("Clean up on aisle pick.")
-        pick_file.close()
-    
 def monitor_arduino():
     finger_file = open(finger_file_path, 'w')
-    ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
+    ser = serial.Serial(serial_port, BAUD_RATE)
     try:
         while True:
             msg = ser.readline().rstrip() + " When:" + str(get_usec_timestamp())
@@ -114,12 +93,11 @@ try:
     midi_proc.start()
     arduino_proc.join()
     midi_proc.join()     
-    # twiddler = Process(target=twiddle_thumbs)
-    # picker = Process(target=pick_em)
-    # twiddler.start()
-    # picker.start()
-    # twiddler.join()
-    # picker.join()
+except KeyboardInterrupt:
+    midi_proc.terminate();
+    midi_proc.join();
+    arduino_proc.terminate();
+    arduino_proc.join();
 except Exception, e:
     print("ERROR: Could not fork process. " + str(e))
 

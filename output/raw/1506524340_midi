@@ -1,0 +1,8 @@
+note_on channel=0 note=28 velocity=60 time=5.77399802208
+note_off channel=0 note=28 velocity=64 time=5.87285399437
+note_on channel=0 note=28 velocity=69 time=5.96755313873
+note_off channel=0 note=28 velocity=64 time=6.07725906372
+note_on channel=0 note=28 velocity=80 time=6.15609097481
+note_off channel=0 note=28 velocity=64 time=6.27040195465
+note_on channel=0 note=28 velocity=84 time=6.35217308998
+note_off channel=0 note=28 velocity=64 time=6.47054100037
