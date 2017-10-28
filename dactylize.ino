@@ -5,7 +5,7 @@
 */
 
 #include <SPI.h>
-
+const long BAUD_RATE = 115200;
 const int INPUT_LATCH_PIN = 9;
 const int OUTPUT_LATCH_PIN = 10;
 const int NUM_OF_INPUT_CHIPS = 2;
@@ -20,6 +20,7 @@ bool change_detected = false;
 int hand_chip_id;
 int key_pin_id;
 long change_count = 0;
+unsigned long timestamp = 0;
 
 void get_input() {
     digitalWrite(INPUT_LATCH_PIN, LOW);
@@ -47,7 +48,7 @@ byte check_connections(int pin) {
             Serial.println(input_bytes[i], BIN);
             Serial.println(connection_matrix[pin][i], BIN);
             */
-            
+            timestamp = micros();
             detected_connection = input_bytes[i];
             hand_chip_id = i;
             change_detected = true;
@@ -65,7 +66,8 @@ void setup() {
 
     set_output();
 
-    Serial.begin(115200);
+    // Serial.begin(115200);
+    Serial.begin(BAUD_RATE);
 }
 
 void print_new_state(byte detected_connection) {
@@ -73,16 +75,19 @@ void print_new_state(byte detected_connection) {
     if (detected_connection) {
         state = 1;
     }
-        
+
     Serial.print(change_count++, DEC);
-    Serial.print(": Hand:");
+    Serial.print("H"); // Hand
     Serial.print(hand_chip_id, DEC);
-    Serial.print(" Finger:");
+    Serial.print("F"); // Finger
     Serial.print(detected_connection, DEC);   
-    Serial.print(" Key:");
+    Serial.print("K"); // Key
     Serial.print(key_pin_id, DEC);
-    Serial.print(" State:");
-    Serial.println(state, DEC);
+    Serial.print("S"); // State
+    Serial.print(state, DEC);
+    Serial.print("T"); // When (microseconds since program start)
+    Serial.println(timestamp, DEC);
+    // Serial.flush();
 }
 
 void loop() {
@@ -90,6 +95,7 @@ void loop() {
     byte detected_connection;
 
     for (int i = 0; i < NUM_OF_OUTPUT_CHIPS; i++) {
+        // Serial.println(i, DEC);
         for (int j = 0; j < 8; j++) {
             int pin = j + (i * 8);
             bitSet(output_bytes[i], j);

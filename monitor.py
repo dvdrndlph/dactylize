@@ -54,7 +54,7 @@ def monitor_arduino():
     ser = serial.Serial(serial_port, BAUD_RATE)
     try:
         while True:
-            msg = ser.readline().rstrip() + " When:" + str(get_usec_timestamp())
+            msg = ser.readline().rstrip() + "W" + str(get_usec_timestamp())
             print(msg)
             msg += "\n"
             finger_file.write(str(msg)) 
@@ -71,11 +71,11 @@ def monitor_midi():
     inny = mido.open_input()
     try:
         while True:
+            when = get_usec_timestamp()
             msg = inny.receive()
-            msg.time = get_usec_timestamp()
             msg = str(msg)
-            print msg
-            msg += "\n" 
+            msg += ' when={0}\n'.format(when)
+            print msg,
             midi_file.write(str(msg))
     except KeyboardInterrupt:
         print("INTerrupted MIDI monitoring.\n");
@@ -102,5 +102,5 @@ except Exception, e:
     print("ERROR: Could not fork process. " + str(e))
 
 # Call dactylizer to generate .midi and .abcdf output.
-subprocess.call([DACTYLIZER_CMD, str(file_time)])
+# subprocess.call([DACTYLIZER_CMD, str(file_time)])
 sys.exit(0)

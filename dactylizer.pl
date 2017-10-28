@@ -248,13 +248,24 @@ die "Bad MIDI format 0 transformation" if $CHILD_ERROR;
 my %Finger_Event_For_Note;
 open FINGERS, "< $Finger_Path" or die "Bad open of $Finger_Path";
 # 240: Hand:1 Finger:16 Key:5 State:1 When:904.505608082
+# is now compressed to this:
+# 240H1F16K5S1T9999W904.505608082
+my @Finger_Event_Separator = (
+    'Hand', # H
+    'Finger', # F
+    'Key', # K
+    'State', # S
+    'Time', # T (timestamp from Arduino)
+    'When' # W (timestamp from computer)
+);
+print Dumper \@Finger_Event_Separator;
 while (my $finger_line = <FINGERS>) {
-    my @token = split /\s+/, $finger_line;
+    my @token = split /H|F|K|S|T|W/, $finger_line;
+    chomp @token;
     shift @token; # Ignore event number
     my %finger_event = ();
-    foreach my $token (@token) {
-        my ($var, $val) = split ':', $token; 
-        $finger_event{$var} = $val;
+    for (my $i = 0; $i < scalar @token; $i++) {
+        $finger_event{$Finger_Event_Separator[$i]} = $token[$i];
     }
     my $decimal = $finger_event{Finger};
     my $binary = sprintf('%08b', $decimal);
