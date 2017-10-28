@@ -87,7 +87,7 @@ void print_new_state(byte detected_connection) {
     Serial.print(state, DEC);
     Serial.print("T"); // When (microseconds since program start)
     Serial.println(timestamp, DEC);
-    // Serial.flush();
+    Serial.flush();
 }
 
 void loop() {

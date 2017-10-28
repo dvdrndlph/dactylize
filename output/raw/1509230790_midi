@@ -1,0 +1,12 @@
+note_on channel=0 note=64 velocity=72 time=0 when=1.21632385254
+note_off channel=0 note=64 velocity=64 time=0 when=23.5819950104
+note_on channel=0 note=64 velocity=65 time=0 when=23.7101318836
+note_off channel=0 note=64 velocity=64 time=0 when=23.8520989418
+note_on channel=0 note=64 velocity=82 time=0 when=23.9280979633
+note_off channel=0 note=64 velocity=64 time=0 when=24.1039788723
+note_on channel=0 note=64 velocity=73 time=0 when=24.2001190186
+note_off channel=0 note=64 velocity=64 time=0 when=24.3745520115
+note_on channel=0 note=64 velocity=73 time=0 when=24.4899330139
+note_off channel=0 note=64 velocity=64 time=0 when=24.6399738789
+note_on channel=0 note=64 velocity=74 time=0 when=24.7656760216
+note_off channel=0 note=64 velocity=64 time=0 when=24.9178750515
